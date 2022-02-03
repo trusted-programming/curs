@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+if ! command -v cargo >/dev/null 2>&1; then
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+fi
+if ! command -v tree-grepper  >/dev/null 2>&1; then 
+	cargo install --git https://github.com/BrianHicks/tree-grepper
+fi
+if [[ ! $@ ]]; then
+    python3 -m curious -h
+else
+    python3 -m curious $@
+fi
