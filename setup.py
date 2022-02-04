@@ -1,9 +1,7 @@
 from setuptools import setup, find_packages
 
 install_requires=[
-    "torch==1.10.1+cu113",
-    "torchaudio==0.10.1+cu113",
-    "torchvision==0.11.2+cu113",
+    "torch==1.10.2",
     "tqdm==4.62.3",
     "sklearn==0.0",
     "transformers==4.15.0",
@@ -11,7 +9,6 @@ install_requires=[
     "tree-sitter-parsers==0.0.7",
     "tensorflow==2.7.0",
     "keras-radam==0.15.0",
-    "pickle5==0.0.11",
 ]
 
 setup(
