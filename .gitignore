@@ -1,1 +1,7 @@
 *.tgz
+./model.py
+__pycache__
+build
+dist
+curious.egg-info
+curious/__pycache__

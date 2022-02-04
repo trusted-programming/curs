@@ -32,7 +32,7 @@ setup(
   ],
   package_dir={"curious": "curious"},
   packages=find_packages("."),
-  package_data={'curious': ['*.txt', 'tbcnn/*']},
+  package_data={'curious': ['*.txt', 'tbcnn/*', 'codeBERT/*']},
   scripts=['./scripts/curious'],
   install_requires=install_requires,
   include_package_data=True,

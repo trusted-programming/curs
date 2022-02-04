@@ -1,18 +1,22 @@
-import sys
+from tqdm import tqdm
 import argparse
-import random
-import pickle
-import os
-import re
-import copy
-import time
 import copy
 import numpy as np
+import os
+import pickle5 as pickle
+import random
+import re
+import shutil
+import sys
 import tensorflow.compat.v1 as tf
+import time
+import torch
+import torch.nn.functional as F
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import warnings
 warnings.filterwarnings("ignore")
 import logging
+logging.basicConfig(level=logging.ERROR)
 logging.getLogger('tensorflow').disabled = True
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
@@ -22,6 +26,9 @@ np.set_printoptions(threshold=sys.maxsize)
 tf.compat.v1.disable_eager_execution()
 tf.disable_v2_behavior()
 
+from .load_data import Load_Data
+from .model import RobertaClass
+from .tokenizer import Tokenizer
 from .treesitter_rust_data_processor import TreeSitterRustDataProcessor
 from .base_data_loader import BaseDataLoader
 from .util.threaded_iterator import ThreadedIterator
@@ -54,6 +61,8 @@ def parse_arguments():
     parser.add_argument('--cuda', default="1", type=str, help='enables cuda')
     parser.add_argument('--verbal', type=bool, default=True,
                         help='print training info or not')
+    parser.add_argument('--model', default='codeBERT',
+                        help='model: tbcnn, codeBERT')
     parser.add_argument('--model_path', default=os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'tbcnn'),
                         help='path to save the model')
     parser.add_argument('--n_hidden', type=int, default=50,
@@ -92,45 +101,89 @@ def parse_arguments():
     opt = parser.parse_args()
     return opt
 
+def inference(model_file, datasets, files, device):
+    infer_dataloader = Load_Data(datasets, 1)
+    infer_data = infer_dataloader.loader()
+    model = RobertaClass()
+    if os.path.exists(model_file):
+       model_py = os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'model.py')
+       shutil.copyfile(model_py, "model.py")
+       model = torch.load(model_file, map_location=device)
+    else:
+        print('Caution! The pre-trained load model does not exist, you cannot reprocude the resutls')
+    model.eval()
+    #Inference  
+    for step, data in enumerate(infer_data):
+        #Load data
+        input_ids = data[0].to(device)
+        attention_masks  = data[1].to(device)
+        token_type_ids = data[2].to(device)
+        file = files[step]
+        with torch.no_grad():   
+            #Calculate loss
+            outputs = model(input_ids, attention_masks, token_type_ids)
+            probabilities = F.softmax(outputs, dim=-1)
+            max_val, max_idx = torch.max(outputs.data, dim=1)   
+            if max_idx==0:
+                result = 'Safe'
+            else:
+                result = 'Unsafe'
+            print('%s classified as %s (prob=%.2f)'%(file, result, probabilities[0][max_idx].item()))    
+     
 if __name__ == "__main__":
     opt = parse_arguments()
-    processor = TreeSitterRustDataProcessor(opt.node_type_vocabulary_path, opt.token_vocabulary_path, opt.files, opt.test_path)
-    os.environ['CUDA_VISIBLE_DEVICES'] = "0"
-    checkfile = os.path.join(opt.model_path, 'cnn_tree.ckpt')
-    ckpt = tf.train.get_checkpoint_state(opt.model_path)
-    if not (ckpt and ckpt.model_checkpoint_path):
-        print('Failed to upload the pretrained model')   
-    tbcnn_model = TBCNN(opt)
-    tbcnn_model.feed_forward()
-    test_data_loader = BaseDataLoader(1, opt.tree_size_threshold_upper, opt.tree_size_threshold_lower, opt.test_path, False)
+    if opt.model != "":
+        opt.model_path = os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), opt.model)
+    if opt.model == "tbcnn":
+        processor = TreeSitterRustDataProcessor(opt.node_type_vocabulary_path, opt.token_vocabulary_path, opt.files, opt.test_path)
+        os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+        checkfile = os.path.join(opt.model_path, 'cnn_tree.ckpt')
+        ckpt = tf.train.get_checkpoint_state(opt.model_path)
+        if not (ckpt and ckpt.model_checkpoint_path):
+            print('Failed to upload the pretrained model')   
+        tbcnn_model = TBCNN(opt)
+        tbcnn_model.feed_forward()
+        test_data_loader = BaseDataLoader(1, opt.tree_size_threshold_upper, opt.tree_size_threshold_lower, opt.test_path, False)
 
-    saver = tf.train.Saver(save_relative_paths=True, max_to_keep=5)  
-    init = tf.global_variables_initializer()
-    with tf.Session() as sess:
-        sess.run(init)
-        if ckpt and ckpt.model_checkpoint_path:
-            # print("Checkpoint path : " + str(ckpt.model_checkpoint_path))
-            saver.restore(sess, ckpt.model_checkpoint_path)
-        test_batch_iterator = ThreadedIterator(test_data_loader.make_minibatch_iterator(), max_queue_size=opt.worker)
-        for test_step, test_batch_data in enumerate(test_batch_iterator):
-            scores = sess.run(
-                    [tbcnn_model.softmax],
-                    feed_dict={
-                        tbcnn_model.placeholders["node_type"]: test_batch_data["batch_node_type_id"],
-                        tbcnn_model.placeholders["node_token"]:  test_batch_data["batch_node_sub_tokens_id"],
-                        tbcnn_model.placeholders["children_index"]:  test_batch_data["batch_children_index"],
-                        tbcnn_model.placeholders["children_node_type"]: test_batch_data["batch_children_node_type_id"],
-                        tbcnn_model.placeholders["children_node_token"]: test_batch_data["batch_children_node_sub_tokens_id"],
-                        tbcnn_model.placeholders["dropout_rate"]: 0.0
-                    }
-                )
-
-            files = test_batch_data['batch_files']
-            batch_predictions = list(np.argmax(scores[0],axis=1))
-            confidence = np.amax(scores[0],axis=1)[0]
-            if batch_predictions[0]==0:
-                   print('%s: Safe (%.3f).'%(files[0],confidence))
-            elif batch_predictions[0]==1:
-                   print('%s: Unsafe (%.3f).'%(files[0],confidence))
-            else:
-                   print('Uknown category')
+        saver = tf.train.Saver(save_relative_paths=True, max_to_keep=5)  
+        init = tf.global_variables_initializer()
+        with tf.Session() as sess:
+            sess.run(init)
+            if ckpt and ckpt.model_checkpoint_path:
+                # print("Checkpoint path : " + str(ckpt.model_checkpoint_path))
+                saver.restore(sess, ckpt.model_checkpoint_path)
+            test_batch_iterator = ThreadedIterator(test_data_loader.make_minibatch_iterator(), max_queue_size=opt.worker)
+            for test_step, test_batch_data in enumerate(test_batch_iterator):
+                scores = sess.run(
+                        [tbcnn_model.softmax],
+                        feed_dict={
+                            tbcnn_model.placeholders["node_type"]: test_batch_data["batch_node_type_id"],
+                            tbcnn_model.placeholders["node_token"]:  test_batch_data["batch_node_sub_tokens_id"],
+                            tbcnn_model.placeholders["children_index"]:  test_batch_data["batch_children_index"],
+                            tbcnn_model.placeholders["children_node_type"]: test_batch_data["batch_children_node_type_id"],
+                            tbcnn_model.placeholders["children_node_token"]: test_batch_data["batch_children_node_sub_tokens_id"],
+                            tbcnn_model.placeholders["dropout_rate"]: 0.0
+                        }
+                    )
+                files = test_batch_data['batch_files']
+                batch_predictions = list(np.argmax(scores[0],axis=1))
+                confidence = np.amax(scores[0],axis=1)[0]
+                if batch_predictions[0]==0:
+                       print('%s: Safe (%.3f).'%(files[0],confidence))
+                elif batch_predictions[0]==1:
+                       print('%s: Unsafe (%.3f).'%(files[0],confidence))
+                else:
+                       print('Uknown category')
+    else:
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        USE_CUDA = torch.cuda.is_available()
+        device = torch.device("cuda" if USE_CUDA else "cpu")
+        seed_val = 42
+        random.seed(seed_val)
+        np.random.seed(seed_val)
+        torch.manual_seed(seed_val)
+        torch.cuda.manual_seed_all(seed_val)
+        tokenizer = Tokenizer(opt.files)
+        dataset, files = tokenizer.tokenize()
+        model = os.path.join(opt.model_path, 'codeBERT_pl.bin')
+        inference(model, dataset, files, device)
