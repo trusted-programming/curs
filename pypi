@@ -1,11 +1,11 @@
 rm -rf dist/*
 python3 setup.py sdist bdist_wheel
 if [ "$1" == "main" ]; then
-twine upload dist/curious-*
-pip3 uninstall curious -y
-pip3 install curious
+twine upload dist/curs-*
+pip3 uninstall curs -y
+pip3 install curs
 else
-pip3 uninstall curious -y
-pip3 install dist/curious-*-py3-none-any.whl
-curious ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
+pip3 uninstall curs -y
+pip3 install dist/curs-*-py3-none-any.whl
+curs ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
 fi

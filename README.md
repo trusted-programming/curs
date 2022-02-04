@@ -1,11 +1,11 @@
 # Classify unsafe Rust code
 
-For each function in Rust, ```curious``` infers whether it is unsafe or not.
+For each function in Rust, ```curs``` infers whether it is unsafe or not.
 
 Example usage:
 
 ```bash
-python3 -m curious ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
+python3 -m curs ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
 ```
 
 ## Dependencies
@@ -20,6 +20,6 @@ cargo install --git https://github.com/BrianHicks/tree-grepper
 Download the pretrained code model before building the package:
 ```bash
 wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
-mkdir -p curious/codeBERT
-mv codeBERT_pl.bin curious/codeBERT/
+mkdir -p curs/codeBERT
+mv codeBERT_pl.bin curs/codeBERT/
 ```

@@ -35,8 +35,6 @@ from .util.threaded_iterator import ThreadedIterator
 from .util.network.tbcnn import TBCNN
 from .util import util_functions
 
-import curious
-
 def parse_arguments(): 
     parser = argparse.ArgumentParser()
     parser.add_argument('--worker', type=int,
@@ -63,7 +61,7 @@ def parse_arguments():
                         help='print training info or not')
     parser.add_argument('--model', default='codeBERT',
                         help='model: tbcnn, codeBERT')
-    parser.add_argument('--model_path', default=os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'tbcnn'),
+    parser.add_argument('--model_path', default=os.path.join(os.path.dirname(os.path.abspath(curs.__file__)), 'tbcnn'),
                         help='path to save the model')
     parser.add_argument('--n_hidden', type=int, default=50,
                         help='number of hidden layers')
@@ -83,9 +81,9 @@ def parse_arguments():
                         default=0.0, help='best f1 to save model')
     parser.add_argument('--test_path', default="/tmp/treesitter_rust-buckets.pkl",
                         help='path of testing data')
-    parser.add_argument('--node_type_vocabulary_path', default=os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'vocab', 'type.txt'),
+    parser.add_argument('--node_type_vocabulary_path', default=os.path.join(os.path.dirname(os.path.abspath(curs.__file__)), 'vocab', 'type.txt'),
                         help='the path to node type vocab')
-    parser.add_argument('--token_vocabulary_path', default=os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'vocab', 'token.txt'),
+    parser.add_argument('--token_vocabulary_path', default=os.path.join(os.path.dirname(os.path.abspath(curs.__file__)), 'vocab', 'token.txt'),
                         help='the path to node token vocab')
     parser.add_argument('--task', type=int, default=0,
                         choices=range(0, 2), help='0 for training, 1 for testing')
@@ -106,7 +104,7 @@ def inference(model_file, datasets, files, device):
     infer_data = infer_dataloader.loader()
     model = RobertaClass()
     if os.path.exists(model_file):
-       model_py = os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), 'model.py')
+       model_py = os.path.join(os.path.dirname(os.path.abspath(curs.__file__)), 'model.py')
        shutil.copyfile(model_py, "model.py")
        model = torch.load(model_file, map_location=device)
     else:
@@ -133,7 +131,7 @@ def inference(model_file, datasets, files, device):
 if __name__ == "__main__":
     opt = parse_arguments()
     if opt.model != "":
-        opt.model_path = os.path.join(os.path.dirname(os.path.abspath(curious.__file__)), opt.model)
+        opt.model_path = os.path.join(os.path.dirname(os.path.abspath(curs.__file__)), opt.model)
     if opt.model == "tbcnn":
         processor = TreeSitterRustDataProcessor(opt.node_type_vocabulary_path, opt.token_vocabulary_path, opt.files, opt.test_path)
         os.environ['CUDA_VISIBLE_DEVICES'] = "0"
