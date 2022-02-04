@@ -34,6 +34,7 @@ from .base_data_loader import BaseDataLoader
 from .util.threaded_iterator import ThreadedIterator
 from .util.network.tbcnn import TBCNN
 from .util import util_functions
+import curs
 
 def parse_arguments(): 
     parser = argparse.ArgumentParser()
