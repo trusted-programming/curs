@@ -14,3 +14,12 @@ It uses `tree-grepper` to parse Rust functions.
 ```bash
 cargo install --git https://github.com/BrianHicks/tree-grepper
 ```
+
+## Build dependencies
+
+Download the pretrained code model before building the package:
+```bash
+wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
+mkdir -p curious/codeBERT
+mv codeBERT_pl.bin curious/codeBERT/
+```
