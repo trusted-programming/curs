@@ -32,4 +32,27 @@ Download the pretrained code model before building the package:
 wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
 mkdir -p curs/codeBERT
 mv codeBERT_pl.bin curs/codeBERT/
+wget http://bertrust.s3.amazonaws.com/tbcnn.zip
+unzip tbcnn.zip
+```
+
+## Datasets
+* curs-0.0.1-py3-none-any.whl   # package distribution
+* uniq-unsafe-safe-asm.tar.bz2  # Assembler of Rust functions classified into safe and unsafe folders
+  - codeBERT_pl.bin             # pretrained codeBERT model for classifying unsafe Rust code
+  - tbcnn.zip                   # pretrained TBCNN model for classifying unsafe Rust code
+* unique-safe-unsafe-fn.tar.bz2 # Rust functions classified into safe and unsafe folders
+
+```bash
+files=$(s3cmd ls s3://bertrust | awk '{system("basename " $4)}')
+# download files
+for file in $files; do
+	wget http://bertrust.s3.amazonaws.com/$file
+done
+# upload files
+for file in $files; do
+	s3cmd put $file s3://bertrust
+done
+# recursively set acl of the files in the bucket to public accessible
+s3cmd setacl -Pr s3://bertrust
 ```
