@@ -1,8 +1,12 @@
 *.tgz
-./model.py
+*.zip
+*.bz2
+t.txt
+model.py
 __pycache__
 build
 dist
-curious.egg-info
-curious/__pycache__
-curious/codeBERT/codeBERT_pl.bin
+curs.egg-info
+curs/__pycache__
+curs/codeBERT/*
+curs/tbcnn/*
