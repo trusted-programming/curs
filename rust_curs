@@ -1,0 +1,3 @@
+#!/bin/bash
+export LD_LIBRARY_PATH=/home/y00577373/Documents/github.com/guillaume-be/rust-bert/target/debug/build/torch-sys-d670c258b817ade5/out/libtorch/libtorch/lib/
+/home/y00577373/.cargo/bin/curs $@

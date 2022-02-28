@@ -1,0 +1,26 @@
+[package]
+edition = "2021"
+name = "curs"
+version = "0.1.0"
+
+[dependencies]
+indicatif = "*"
+anyhow = "1.0.52"
+bump_alloc = "0.1.0"
+clap = { version = "3.0.10", features = [ "derive", "std", "color", "suggestions", "cargo" ] }
+crossbeam = "0.8.1"
+ignore = "0.4.18"
+itertools = "0.10.3"
+rayon = "1.5.1"
+serde = { version = "1.0.134", features = [ "derive" ] }
+serde_json = "1.0.75"
+tree-sitter = "0.20.2"
+rust-bert = "0.17.0"
+tch = "~0.6.1"
+rust_tokenizers = "~7.0.1"
+
+[dev-dependencies]
+insta = "1.10.0"
+
+[build-dependencies]
+cc = { version = "1.0.72", features = [ "parallel" ] }

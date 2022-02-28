@@ -20,7 +20,7 @@ class Tokenizer():
         token_type_ids = []
         lst_files = []
         count_processed_files = 0
-        cmd = ["tree-grepper", "--query", "rust", "(function_item)", "-f", "json"] + [f.name for f in self.data_path]
+        cmd = ["tree-grepper", "--query", "rust", "(function_item (identifier) @id) @function", "-f", "json"] + [f.name for f in self.data_path]
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         (out, err) = proc.communicate()
         files = json.loads(out)
@@ -28,9 +28,20 @@ class Tokenizer():
            try:
                 count_processed_files += 1
                 matches = file['matches']
+                r1 = 0
+                c1 = 0
+                r2 = 0
+                c2 = 0
                 for i in trange(0, len(matches)):
                    is_unsafe = "safe"
                    code = matches[i]
+                   id = code['name']
+                   if id == "id":
+                       r1 = code['start']['row'] - 1
+                       c1 = code['start']['column'] - 1
+                       r2 = code['end']['row'] - 1
+                       c2 = code['end']['column'] - 1
+                       continue
                    code_snippet = code['text']
                    code_snippet2 = re.sub('unsafe fn ', '', code_snippet)                   
                    if code_snippet2 != code_snippet:
@@ -39,7 +50,7 @@ class Tokenizer():
                    # remove unsafe blocks
                    code_snippet = re.sub('unsafe ', '', code_snippet)                   
                    code_snippet = bytes(code_snippet, 'utf-8')
-                   lst_files.append("%s:%d:%d:%s " % (file['file'], code['start']['row'], code['start']['column'], is_unsafe))
+                   lst_files.append("%s,%d,%d,%d,%d" % (file['file'], r1, c1, r2, c2))
                    encoded_dict = self.tokenizer.encode_plus(
                         code_snippet.decode("utf-8"), # Sentence to encode.
                         add_special_tokens = True, # Add '[CLS]' and '[SEP]'

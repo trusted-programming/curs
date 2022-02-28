@@ -1,3 +1,4 @@
+import torch
 from tqdm import tqdm
 import argparse
 import copy
@@ -8,9 +9,8 @@ import random
 import re
 import shutil
 import sys
-import tensorflow.compat.v1 as tf
 import time
-import torch
+import tensorflow.compat.v1 as tf
 import torch.nn.functional as F
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import warnings
@@ -109,7 +109,7 @@ def inference(model_file, datasets, files, device):
        shutil.copyfile(model_py, "model.py")
        model = torch.load(model_file, map_location=device)
     else:
-        print('Caution! The pre-trained load model does not exist, you cannot reprocude the resutls')
+        print('Caution! The pre-trained load model does not exist, you cannot reprocude the results')
     model.eval()
     #Inference  
     for step, data in enumerate(infer_data):
@@ -127,7 +127,7 @@ def inference(model_file, datasets, files, device):
                 result = 'Safe'
             else:
                 result = 'Unsafe'
-            print('%s classified as %s (prob=%.2f)'%(file, result, probabilities[0][max_idx].item()))    
+            print('%s,%s(prob=%.2f)'%(file, result, probabilities[0][max_idx].item()))    
      
 if __name__ == "__main__":
     opt = parse_arguments()
@@ -168,9 +168,9 @@ if __name__ == "__main__":
                 batch_predictions = list(np.argmax(scores[0],axis=1))
                 confidence = np.amax(scores[0],axis=1)[0]
                 if batch_predictions[0]==0:
-                       print('%s: Safe (%.3f).'%(files[0],confidence))
+                       print('%s,Safe(%.3f).'%(files[0],confidence))
                 elif batch_predictions[0]==1:
-                       print('%s: Unsafe (%.3f).'%(files[0],confidence))
+                       print('%s,Unsafe(%.3f).'%(files[0],confidence))
                 else:
                        print('Uknown category')
     else:

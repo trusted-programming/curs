@@ -9,11 +9,13 @@ install_requires=[
     "tree-sitter-parsers==0.0.7",
     "tensorflow==2.7.0",
     "keras-radam==0.15.0",
+    "pickle5==0.0.11",
+    "nltk==3.7",
 ]
 
 setup(
   name = 'curs',
-  version = "0.0.1",
+  version = "0.0.2",
   py_modules = ['curs'],
   description = 'classify unsafe Rust code',
   author = 'Yijun Yu and Dimitris Gkoumas and Nghi D. Q. Bui',

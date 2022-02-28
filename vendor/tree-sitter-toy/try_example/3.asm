@@ -1,0 +1,25 @@
+sub    $0x58,%rsp
+mov    %rdi,0x38(%rsp)
+mov    %rsi,0x40(%rsp)
+mov    %rdi,0x10(%rsp)
+mov    %rdi,0x48(%rsp)
+lea    0x18(%rsp),%rdi
+lea    0x0(%rip),%rdx        
+mov    $0x6,%ecx
+callq  *0x0(%rip)        
+mov    0x10(%rsp),%rax
+lea    0x18(%rsp),%rcx
+mov    %rcx,0x50(%rsp)
+mov    %rax,0x30(%rsp)
+lea    0x30(%rsp),%rsi
+lea    0x18(%rsp),%rdi
+lea    0x0(%rip),%rdx        
+callq  *0x0(%rip)        
+lea    0x18(%rsp),%rdi
+callq  *0x0(%rip)        
+mov    %al,0xf(%rsp)
+mov    0xf(%rsp),%al
+and    $0x1,%al
+movzbl %al,%eax
+add    $0x58,%rsp
+retq   
