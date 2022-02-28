@@ -15,7 +15,7 @@ install_requires=[
 
 setup(
   name = 'curs',
-  version = "0.0.2",
+  version = "0.0.1",
   py_modules = ['curs'],
   description = 'classify unsafe Rust code',
   author = 'Yijun Yu and Dimitris Gkoumas and Nghi D. Q. Bui',
