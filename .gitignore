@@ -10,3 +10,5 @@ curs.egg-info
 curs/__pycache__
 curs/codeBERT/*
 curs/tbcnn/*
+target
+codeBERT_pl.bin
