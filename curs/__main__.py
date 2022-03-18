@@ -112,6 +112,12 @@ def inference(model_file, datasets, files, device):
         print('Caution! The pre-trained load model does not exist, you cannot reprocude the results')
     model.eval()
     #Inference  
+    # print(torch.cuda.device_count())
+    if torch.cuda.device_count() > 1:
+       print('You use %d GPUs'%torch.cuda.device_count())
+       model = nn.DataParallel(model, device_ids=[0,1,2,3])
+       torch.cuda.set_device(int(opt.cuda))
+       model.cuda(int(opt.cuda))
     for step, data in enumerate(infer_data):
         #Load data
         input_ids = data[0].to(device)
