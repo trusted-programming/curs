@@ -183,6 +183,7 @@ mod tests {
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@import)")
             .unwrap();
+        // println!("query is {:?}", query);
         let extractor = Extractor::new(lang, query);
 
         let extracted = extractor

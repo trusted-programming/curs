@@ -12,3 +12,4 @@ curs/codeBERT/*
 curs/tbcnn/*
 target
 codeBERT_pl.bin
+*.code-workspace

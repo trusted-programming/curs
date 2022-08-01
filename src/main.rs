@@ -7,23 +7,26 @@ use cli::{Invocation, QueryFormat, QueryOpts};
 use crossbeam::channel;
 use language::Language;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::env;
-use std::io::{self, BufWriter, Write};
-use std::path::PathBuf;
-use tree_sitter::Parser;
 use rust_bert::bert::BertConfig;
+use rust_bert::pipelines::common::ConfigOption;
+use rust_bert::pipelines::common::ModelType;
 use rust_bert::resources::{RemoteResource, Resource};
 use rust_bert::roberta::RobertaForSequenceClassification;
 use rust_bert::Config;
-use rust_tokenizers::tokenizer::{RobertaTokenizer, MultiThreadedTokenizer, TruncationStrategy};
-use tch::{nn, no_grad, Device, Tensor};
+use rust_tokenizers::tokenizer::{MultiThreadedTokenizer, RobertaTokenizer, TruncationStrategy};
+use std::env;
+use std::io::{self, BufWriter, Write};
+use std::path::PathBuf;
 use tch::kind::Kind::Int64;
-use rust_bert::pipelines::common::ConfigOption;
-use rust_bert::pipelines::common::ModelType;
+use tch::{nn, no_grad, Device, Tensor};
+use tree_sitter::Parser;
 
 #[global_allocator]
 static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
-
+// cargo run --package curs --bin curs
+// cargo test --package curs --bin curs -- tests
+// cargo test --package curs --bin curs -- tests::all_rust --exact
+// bin: ./curs -q rust 'rust' ../../error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
@@ -54,7 +57,6 @@ fn main() {
 fn try_main(args: Vec<String>, out: impl Write) -> Result<()> {
     let invocation = Invocation::from_args(args)
         .context("couldn't get a valid configuration from the command-line options")?;
-
     match invocation {
         Invocation::DoQuery(query_opts) => {
             do_query(query_opts, out).context("couldn't perform the query")
@@ -73,25 +75,42 @@ fn show_languages(mut out: impl Write) -> Result<()> {
     Ok(())
 }
 
-fn classify(config_path: &PathBuf, extracted_file: & extractor::ExtractedFile, model: &RobertaForSequenceClassification, tokenizer: &RobertaTokenizer) -> Result<()> {
+fn classify(
+    config_path: &PathBuf,
+    extracted_file: &extractor::ExtractedFile,
+    model: &RobertaForSequenceClassification,
+    tokenizer: &RobertaTokenizer,
+) -> Result<()> {
     //    Define input
     for extraction in &extracted_file.matches {
         let input_string = format!("{}", extraction.text);
         let is_unsafe = input_string.contains("unsafe fn ");
         if is_unsafe {
-            print!("{}:{}:{}:{}:{}:", 
-                extracted_file.file.as_ref().map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME")).unwrap_or("NO FILE"), 
+            print!(
+                "{}:{}:{}:{}:{}:",
+                extracted_file
+                    .file
+                    .as_ref()
+                    .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+                    .unwrap_or("NO FILE"),
                 extraction.start.row + 1,
                 extraction.start.column + 1,
                 extraction.name,
-                "Unsafe");
+                "Unsafe"
+            );
         } else {
-            print!("{}:{}:{}:{}:{}:", 
-                extracted_file.file.as_ref().map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME")).unwrap_or("NO FILE"), 
+            print!(
+                "{}:{}:{}:{}:{}:",
+                extracted_file
+                    .file
+                    .as_ref()
+                    .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+                    .unwrap_or("NO FILE"),
                 extraction.start.row + 1,
                 extraction.start.column + 1,
                 extraction.name,
-                "Safe");
+                "Safe"
+            );
         }
         let input = [input_string.replace("unsafe ", " ")];
         let tokenized_input = MultiThreadedTokenizer::encode_list(
@@ -129,25 +148,29 @@ fn classify(config_path: &PathBuf, extracted_file: & extractor::ExtractedFile, m
         let device = Device::Cpu;
         let input_tensor = Tensor::stack(tokenized_inputs.as_slice(), 0).to(device);
         let (batch_size, sequence_length) = (1, max_len as i64);
-        
+
         //    Forward pass
         let mask = Tensor::stack(tokenized_masks.as_slice(), 0).to(device);
         let token_type_ids = Tensor::zeros(&[batch_size, sequence_length], (Int64, device));
         let output = no_grad(|| {
-                model.forward_t(
+            model
+                .forward_t(
                     Some(&input_tensor),
                     Some(&mask),
                     Some(&token_type_ids),
                     None,
                     None,
                     false,
-                ).logits
-            });
-        println!("\nsigmoid = {}", output.sigmoid());
+                )
+                .logits
+        });
+        println!("\nsigmoid = {:?}", output.sigmoid());
         let model_config = ConfigOption::from_file(ModelType::Roberta, config_path);
         let label_mapping = model_config.get_label_mapping().clone();
         let label_indices = output.argmax(-1, true).squeeze_dim(1);
-        let scores = output.gather(1, &label_indices.unsqueeze(-1), false).squeeze_dim(1);
+        let scores = output
+            .gather(1, &label_indices.unsqueeze(-1), false)
+            .squeeze_dim(1);
         let label_indices = label_indices.iter::<i64>().unwrap().collect::<Vec<i64>>();
         let scores = scores.iter::<f64>().unwrap().collect::<Vec<f64>>();
         for sentence_idx in 0..label_indices.len() {

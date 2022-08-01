@@ -180,9 +180,10 @@ if __name__ == "__main__":
                 else:
                        print('Uknown category')
     else:
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         USE_CUDA = torch.cuda.is_available()
-        device = torch.device("cuda" if USE_CUDA else "cpu")
+        # device = torch.device("cuda" if USE_CUDA else "cpu")
+        device = torch.device("cpu")
         seed_val = 42
         random.seed(seed_val)
         np.random.seed(seed_val)

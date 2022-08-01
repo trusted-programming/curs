@@ -11,11 +11,11 @@ pip install http://bertrust.s3.amazonaws.com/curs-0.0.1-py3-none-any.whl
 ## Example usage:
 
 ```bash
-curs ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
+curs ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
 # default, using a pretrained CodeBERT model
-curs --model=codeBERT ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
+curs --model=codeBERT ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
 # alternative using a pretrained TBCNN model
-curs --model=tbcnn ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.26/src/error.rs
+curs --model=tbcnn ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
 ```
 
 ## Runtime dependencies

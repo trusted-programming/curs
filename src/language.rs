@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
+// cargo test --package curs --bin curs -- language::tests
 pub enum Language {
     Cpp,
     Elixir,

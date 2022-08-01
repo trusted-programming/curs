@@ -1,0 +1,3 @@
+#libtorch
+export LIBTORCH=/home/vincent/download/libtorch1102_cu113
+export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
