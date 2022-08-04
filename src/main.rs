@@ -23,10 +23,10 @@ use tree_sitter::Parser;
 
 #[global_allocator]
 static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
-// cargo run --package curs --bin curs
+// cargo run --package curs --bin curs -q rust "(_)" error.rs
 // cargo test --package curs --bin curs -- tests
-// cargo test --package curs --bin curs -- tests::all_rust --exact
-// bin: ./curs -q rust 'rust' ../../error.rs
+//  upda
+// bin: ./curs -q rust '(_)' ../../error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
@@ -221,8 +221,8 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
         extracted_files.sort()
     }
     let config_resource = Resource::Remote(RemoteResource {
-        // url: "https://bertrust.s3.amazonaws.com/config.json".into(),
-        url: "config.json".into(),
+        url: "https://bertrust.s3.amazonaws.com/config.json".into(),
+        // url: "config.json".into(),
         cache_subdir: "codebert-base/config".into(),
     });
     let vocab_resource = Resource::Remote(RemoteResource {

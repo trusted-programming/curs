@@ -11,5 +11,6 @@ curs/__pycache__
 curs/codeBERT/*
 curs/tbcnn/*
 target
+vendor/
 codeBERT_pl.bin
 *.code-workspace

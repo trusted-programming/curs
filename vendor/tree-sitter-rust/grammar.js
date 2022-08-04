@@ -35,6 +35,54 @@ const numeric_types = [
 
 const primitive_types = numeric_types.concat(['bool', 'str', 'char'])
 
+const built_in_attributes = [
+  'cfg',
+  'cfg_attr',
+  'test',
+  'ignore',
+  'should_panic',
+  'derive',
+  'automatically_derived',
+  'macro_export',
+  'macro_use',
+  'proc_macro',
+  'proc_macro_derive',
+  'proc_macro_attribute',
+  'allow',
+  'warn',
+  'deny',
+  'forbid',
+  'deprecated',
+  'must_use',
+  'link',
+  'link_name',
+  'no_link',
+  'repr',
+  'crate_type',
+  'no_main',
+  'export_name',
+  'link_section',
+  'no_mangle',
+  'used',
+  'crate_name',
+  'inline',
+  'cold',
+  'no_builtins',
+  'target_feature',
+  'track_caller',
+  'doc',
+  'no_std',
+  'no_implicit_prelude',
+  'path',
+  'recursion_limit',
+  'type_length_limit',
+  'panic_handler',
+  'global_allocator',
+  'windows_subsystem',
+  'feature',
+  'non_exhaustive'
+]
+
 module.exports = grammar({
   name: 'rust',
 
@@ -84,13 +132,13 @@ module.exports = grammar({
     source_file: $ => repeat($._statement),
 
     _statement: $ => choice(
-      $._expression_statement,
+      $.expression_statement,
       $._declaration_statement
     ),
 
     empty_statement: $ => ';',
 
-    _expression_statement: $ => choice(
+    expression_statement: $ => choice(
       seq($._expression, ';'),
       prec(1, $._expression_ending_with_block)
     ),
@@ -150,6 +198,7 @@ module.exports = grammar({
       $.token_tree_pattern,
       $.token_repetition_pattern,
       $.token_binding_pattern,
+      $.metavariable,
       $._non_special_token
     ),
 
@@ -177,6 +226,7 @@ module.exports = grammar({
     _tokens: $ => choice(
       $.token_tree,
       $.token_repetition,
+      $.metavariable,
       $._non_special_token
     ),
 
@@ -190,8 +240,11 @@ module.exports = grammar({
       '$', '(', repeat($._tokens), ')', optional(/[^+*?]+/), choice('+', '*', '?')
     ),
 
+    // Matches non-delimiter tokens common to both macro invocations and
+    // definitions. This is everything except $ and metavariables (which begin
+    // with $).
     _non_special_token: $ => choice(
-      $._literal, $.identifier, $.metavariable, $.mutable_specifier, $.self, $.super, $.crate,
+      $._literal, $.identifier, $.mutable_specifier, $.self, $.super, $.crate,
       alias(choice(...primitive_types), $.primitive_type),
       /[/_\-=->,;:::!=?.@*&#%^+<>|~]+/,
       '\'',
@@ -205,7 +258,7 @@ module.exports = grammar({
     attribute_item: $ => seq(
       '#',
       '[',
-      $.meta_item,
+      $._attr,
       ']'
     ),
 
@@ -213,14 +266,39 @@ module.exports = grammar({
       '#',
       '!',
       '[',
-      $.meta_item,
+      $._attr,
       ']'
+    ),
+
+    _attr: $ => choice(
+      alias($.built_in_attr, $.meta_item),
+      alias($.custom_attr, $.attr_item),
+    ),
+
+    custom_attr: $ => seq(
+      $._path,
+      optional(choice(
+        seq('=', field('value', $._expression)),
+        field('arguments', alias($.delim_token_tree, $.token_tree))
+      ))
+    ),
+
+    built_in_attr: $ => seq(
+      $._built_in_attr_path,
+      optional(choice(
+        seq('=', field('value', $._expression)),
+        field('arguments', $.meta_arguments)
+      ))
+    ),
+
+    _built_in_attr_path: $ => choice(
+      ...built_in_attributes.map(name => alias(name, $.identifier))
     ),
 
     meta_item: $ => seq(
       $._path,
       optional(choice(
-        seq('=', field('value', $._literal)),
+        seq('=', field('value', $._expression)),
         field('arguments', $.meta_arguments)
       ))
     ),
@@ -891,7 +969,24 @@ module.exports = grammar({
         $._reserved_identifier,
       )),
       '!',
-      $.token_tree
+      alias($.delim_token_tree, $.token_tree)
+    ),
+
+    delim_token_tree: $ => choice(
+      seq('(', repeat($._delim_tokens), ')'),
+      seq('[', repeat($._delim_tokens), ']'),
+      seq('{', repeat($._delim_tokens), '}')
+    ),
+
+    _delim_tokens: $ => choice(
+      $._non_delim_token,
+      alias($.delim_token_tree, $.token_tree),
+    ),
+
+    // Should match any token other than a delimiter.
+    _non_delim_token: $ => choice(
+      $._non_special_token,
+      '$'
     ),
 
     scoped_identifier: $ => seq(
@@ -1121,10 +1216,7 @@ module.exports = grammar({
 
     match_arm: $ => seq(
       repeat($.attribute_item),
-      field('pattern', choice(
-        $.macro_invocation,
-        $.match_pattern
-      )),
+      field('pattern', $.match_pattern),
       '=>',
       choice(
         seq(field('value', $._expression), ','),
@@ -1263,6 +1355,7 @@ module.exports = grammar({
       $.range_pattern,
       $.or_pattern,
       $.const_block,
+      $.macro_invocation,
       '_'
     ),
 

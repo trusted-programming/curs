@@ -207,6 +207,22 @@
             {
               "type": "SYMBOL",
               "name": "export_clause"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_from_clause"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_semicolon"
             }
           ]
         },
@@ -223,7 +239,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "identifier"
+              "name": "expression"
             },
             {
               "type": "SYMBOL",
@@ -8349,14 +8365,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "union_type"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "intersection_type"
-        },
-        {
-          "type": "SYMBOL",
           "name": "function_type"
         },
         {
@@ -8496,6 +8504,18 @@
         "type": "SEQ",
         "members": [
           {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "abstract"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
+          {
             "type": "STRING",
             "value": "new"
           },
@@ -8613,6 +8633,14 @@
         {
           "type": "SYMBOL",
           "name": "template_literal_type"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "intersection_type"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "union_type"
         }
       ]
     },
@@ -8787,6 +8815,15 @@
               {
                 "type": "SYMBOL",
                 "name": "this"
+              },
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "predefined_type"
+                },
+                "named": true,
+                "value": "identifier"
               }
             ]
           }
@@ -9771,6 +9808,18 @@
     "construct_signature": {
       "type": "SEQ",
       "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "abstract"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
         {
           "type": "STRING",
           "value": "new"
@@ -10772,6 +10821,16 @@
       {
         "type": "SYMBOL",
         "name": "expression"
+      }
+    ],
+    [
+      {
+        "type": "SYMBOL",
+        "name": "type_query"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "_type_query_subscript_expression"
       }
     ],
     [

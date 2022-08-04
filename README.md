@@ -22,9 +22,29 @@ curs --model=tbcnn ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.
 
 It uses `tree-grepper` to parse Rust functions.
 ```bash
+mkdir vendor & cd vendor
+git clone https://github.com/tree-sitter/tree-sitter-cpp.git
+git clone https://github.com/elixir-lang/tree-sitter-elixir.git
+git clone https://github.com/elm-tooling/tree-sitter-elm.git
+git clone https://github.com/tree-sitter/tree-sitter-haskell.git
+git clone https://github.com/tree-sitter/tree-sitter-ruby.git
+git clone https://github.com/tree-sitter/tree-sitter-rust.git
+git clone https://github.com/tree-sitter/tree-sitter-javascript.git
+git clone https://github.com/tree-sitter/tree-sitter-php.git
+git clone https://github.com/tree-sitter/tree-sitter-typescript.git
 cargo install --git https://github.com/BrianHicks/tree-grepper
 ```
+It uses `libtorch-1.10.2` to inference bert. Download the libtorch with CPU or CUDA from following links:
+```bash
+CPU: https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.2%2Bcpu.zip
+CUDA: https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-with-deps-1.10.2%2Bcu113.zip
+```
+Unzip the file and set the environment path in .bashrc:
 
+```bash
+export LIBTORCH=$libtorchDir$/libtorch
+export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
+```
 ## Build dependencies
 
 Download the pretrained code model before building the package:

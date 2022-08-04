@@ -47,7 +47,7 @@
   (vec)->data[(vec)->len++] = (el);
 
 #define VEC_POP(vec) (vec)->len--;
-  
+
 #define VEC_NEW { .len = 0, .cap = 0, .data = NULL }
 
 #define VEC_BACK(vec) ((vec)->data[(vec)->len - 1])
@@ -87,7 +87,7 @@
  *     when the quasiquote body starts with an operator character.
  *   - qq_body: Prevent extras, like comments, from breaking quasiquotes
  *   - strict: Disambiguate strictness annotation `!` from symbolic operators
- *   - unboxed_tuple_close: Disambiguate the closing parens for unboxed tuples `#)` from symbolic operators
+ *   - unboxed_close: Disambiguate the closing parens for unboxed tuples/sums `#)` from symbolic operators
  *   - bar: The vertical bar `|`, used for guards and list comprehension
  *   - in: Closes the layout of a `let` and consumes the token `in`
  *   - indent: Used as a dummy symbol for initialization; uses newline in the grammar to ensure the scanner is called
@@ -138,7 +138,7 @@ static char *sym_names[] = {
   "qq_bar",
   "qq_body",
   "strict",
-  "unboxed_tuple_close",
+  "unboxed_close",
   "bar",
   "in",
   "indent",
@@ -237,6 +237,7 @@ void debug_state(State *state) {
   debug_valid(state->symbols);
   DEBUG_PRINTF(", indents = ");
   debug_indents(state->indents);
+  DEBUG_PRINTF(" }\n");
 }
 #endif
 
@@ -284,7 +285,7 @@ static void MARK(char *marked_by, bool needs_free, State *state) {
  */
 static bool varid_start_char(const uint32_t c) { return c == '_' || iswlower(c); }
 
-static bool varid_char(const uint32_t c) { 
+static bool varid_char(const uint32_t c) {
   switch (c) {
     case '_':
     case '\'':
@@ -364,7 +365,7 @@ static bool isws(uint32_t c) {
 }
 
 /**
- * A token like a varsym can be terminated by whitespace of brackets.
+ * A token like a varsym can be terminated by whitespace or brackets.
  */
 static bool token_end(uint32_t c) {
   switch (c) {
@@ -384,7 +385,7 @@ static bool token_end(uint32_t c) {
  * Require that the argument string follows the current position and is followed by whitespace.
  * See `seq`
  */
-static bool token(const char *restrict s, State *state) { 
+static bool token(const char *restrict s, State *state) {
   return seq(s, state) && token_end(PEEK);
 }
 
@@ -665,7 +666,7 @@ static void push(uint16_t ind, State *state) {
  */
 static void pop(State *state) {
   if (indent_exists(state)) {
-    DEBUG_PRINTF("pop");
+    DEBUG_PRINTF("pop\n");
     VEC_POP(state->indents);
   }
 }
@@ -856,9 +857,9 @@ static Result cpp_workaround(State *state) {
 }
 
 /**
- * If the current column i 0, a cpp directive may begin.
+ * If the current column is 0, a cpp directive may begin.
  */
-static Result cpp_init(State *state) {
+static Result cpp(State *state) {
   if (column(state) == 0) {
     return cpp_workaround(state);
   }
@@ -1007,12 +1008,12 @@ static Result splice(State *state) {
   return res_cont;
 }
 
-static Result unboxed_tuple_close(State *state) {
+static Result unboxed_close(State *state) {
   if (state->symbols[UNBOXED_TUPLE_CLOSE]) {
     if (PEEK == ')') {
       S_ADVANCE;
-      MARK("unboxed_tuple_close", false, state);
-      return finish(UNBOXED_TUPLE_CLOSE, "unboxed_tuple_close");
+      MARK("unboxed_close", false, state);
+      return finish(UNBOXED_TUPLE_CLOSE, "unboxed_close");
     }
   }
   return res_cont;
@@ -1026,7 +1027,7 @@ static Result inline_comment(State *state) {
   for (;;) {
     switch (PEEK) {
       NEWLINE_CASES:
-      case 0: 
+      case 0:
         goto inline_comment_after_skip;
       default:
         S_ADVANCE;
@@ -1078,7 +1079,7 @@ static Result symop_marked(Symbolic type, State *state) {
       return res_fail;
     }
     case S_UNBOXED_TUPLE_CLOSE:
-      return unboxed_tuple_close(state);
+      return unboxed_close(state);
     default:
       return res_cont;
   }
@@ -1414,11 +1415,10 @@ static Result newline(uint32_t indent, State *state) {
   SHORT_SCANNER;
   res = initialize(indent, state);
   SHORT_SCANNER;
-  res = cpp_workaround(state);
+  res = cpp(state);
   SHORT_SCANNER;
   res = comment(state);
   SHORT_SCANNER;
-  MARK("newline", false, state);
   res = newline_token(indent, state);
   SHORT_SCANNER;
   return newline_indent(indent, state);
@@ -1461,7 +1461,7 @@ static Result init(State *state) {
   SHORT_SCANNER;
   res = dot(state);
   SHORT_SCANNER;
-  res = cpp_init(state);
+  res = cpp(state);
   SHORT_SCANNER;
   if (state->symbols[QQ_BODY]) {
     return qq_body(state);
@@ -1511,7 +1511,7 @@ static void debug_lookahead(State *state) {
     if (isws(PEEK) || PEEK == 0) break;
     else {
       if (first) DEBUG_PRINTF("next: ");
-      DEBUG_PRINTF("%c", PEEK);
+      DEBUG_PRINTF("%c\n", PEEK);
       S_ADVANCE;
       first = false;
     }
@@ -1543,9 +1543,9 @@ static bool eval(Result (*chk)(State *state), State *state) {
     // TODO(414owen) can names[] fail?
     DEBUG_PRINTF("result: %s, ", sym_names[result.sym]);
     if (state->marked == -1) {
-      DEBUG_PRINTF("%d", column(state));
+      DEBUG_PRINTF("%d\n", column(state));
     } else {
-      DEBUG_PRINTF("%s@%d", state->marked_by, state->marked);
+      DEBUG_PRINTF("%s@%d\n", state->marked_by, state->marked);
     }
 #endif
     state->lexer->result_symbol = result.sym;
@@ -1571,9 +1571,9 @@ void *tree_sitter_haskell_external_scanner_create() {
  */
 bool tree_sitter_haskell_external_scanner_scan(void *indents_v, TSLexer *lexer, const bool *syms) {
   indent_vec *indents = (indent_vec*) indents_v;
-  State state = { 
-    .lexer = lexer, 
-    .symbols = syms, 
+  State state = {
+    .lexer = lexer,
+    .symbols = syms,
     .indents = indents
   };
 #ifdef DEBUG
@@ -1591,7 +1591,9 @@ bool tree_sitter_haskell_external_scanner_scan(void *indents_v, TSLexer *lexer, 
 unsigned tree_sitter_haskell_external_scanner_serialize(void *indents_v, char *buffer) {
   indent_vec *indents = (indent_vec*) indents_v;
   unsigned to_copy = sizeof(indents->data[0]) * indents->len;
-  assert(to_copy <= TREE_SITTER_SERIALIZATION_BUFFER_SIZE);
+  if (to_copy > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+    return 0;
+  }
   memcpy(buffer, indents->data, to_copy);
   return to_copy;
 }
@@ -1614,7 +1616,7 @@ void tree_sitter_haskell_external_scanner_deserialize(void *indents_v, char *buf
 /**
  * Destroy the state.
  */
-void tree_sitter_haskell_external_scanner_destroy(void *indents_v) { 
+void tree_sitter_haskell_external_scanner_destroy(void *indents_v) {
   indent_vec *indents = (indent_vec*) indents_v;
   VEC_FREE(indents);
 }

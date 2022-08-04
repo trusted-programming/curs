@@ -1,0 +1,7 @@
+---
+source: src/main.rs
+assertion_line: 499
+expression: "call(&[\"curs\", \"-q\", \"rust\", \"(_)\", \"--format=pretty-json\", \"--sort\",\n                \"--no-gitignore\",\n                \"/home/vincent/rust/curs/vendor/tree-sitter-rust/examples\"])"
+
+---
+
