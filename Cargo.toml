@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "curs"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 indicatif = "*"
@@ -22,11 +22,14 @@ serde = { version = "1.0.134", features = ["derive"] }
 serde_json = "1.0.75"
 tree-sitter = "0.20.2"
 rust-bert = "0.17.0"
+# rust-bert = "0.18.0"
 tch = "~0.6.1"
+# tch = "~0.8.0"
 rust_tokenizers = "~7.0.1"
 
 [dev-dependencies]
 insta = "1.10.0"
+# torch-sys = "~0.8.0"
 
 [build-dependencies]
 cc = { version = "1.0.72", features = ["parallel"] }

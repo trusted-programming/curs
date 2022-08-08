@@ -10,7 +10,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rust_bert::bert::BertConfig;
 use rust_bert::pipelines::common::ConfigOption;
 use rust_bert::pipelines::common::ModelType;
-use rust_bert::resources::{RemoteResource, Resource};
+use rust_bert::resources::{LocalResource, RemoteResource, Resource};
 use rust_bert::roberta::RobertaForSequenceClassification;
 use rust_bert::Config;
 use rust_tokenizers::tokenizer::{MultiThreadedTokenizer, RobertaTokenizer, TruncationStrategy};
@@ -25,8 +25,10 @@ use tree_sitter::Parser;
 static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
 // cargo run --package curs --bin curs -q rust "(_)" error.rs
 // cargo test --package curs --bin curs -- tests
-//  upda
-// bin: ./curs -q rust '(_)' ../../error.rs
+// cargo test --package curs --bin curs -- tests::all_rust
+// ./curs -q rust '(_)' ../../error.rs
+// ./curs -q ruby '(_)' ../../vendor/tree-sitter-ruby
+//./curs --query "rust" "(function_item (identifier) @id) @function" ../../error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
@@ -81,38 +83,52 @@ fn classify(
     model: &RobertaForSequenceClassification,
     tokenizer: &RobertaTokenizer,
 ) -> Result<()> {
-    //    Define input
+    //  Define input
+    // Define the cordinate if extraction "id"
+    let mut r1 = 0;
+    let mut c1 = 0;
+    let mut r2 = 0;
+    let mut c2 = 0;
     for extraction in &extracted_file.matches {
         let input_string = format!("{}", extraction.text);
-        let is_unsafe = input_string.contains("unsafe fn ");
-        if is_unsafe {
-            print!(
-                "{}:{}:{}:{}:{}:",
-                extracted_file
-                    .file
-                    .as_ref()
-                    .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
-                    .unwrap_or("NO FILE"),
-                extraction.start.row + 1,
-                extraction.start.column + 1,
-                extraction.name,
-                "Unsafe"
-            );
-        } else {
-            print!(
-                "{}:{}:{}:{}:{}:",
-                extracted_file
-                    .file
-                    .as_ref()
-                    .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
-                    .unwrap_or("NO FILE"),
-                extraction.start.row + 1,
-                extraction.start.column + 1,
-                extraction.name,
-                "Safe"
-            );
+        // let is_unsafe = input_string.contains("unsafe fn ");
+        // if is_unsafe {
+        //     print!(
+        //         "{}:{}:{}:{}:{}:",
+        //         extracted_file
+        //             .file
+        //             .as_ref()
+        //             .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+        //             .unwrap_or("NO FILE"),
+        //         extraction.start.row + 1,
+        //         extraction.start.column + 1,
+        //         extraction.name,
+        //         "Unsafe"
+        //     );
+        // } else {
+        //     print!(
+        //         "{}:{}:{}:{}:{}:",
+        //         extracted_file
+        //             .file
+        //             .as_ref()
+        //             .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+        //             .unwrap_or("NO FILE"),
+        //         extraction.start.row + 1,
+        //         extraction.start.column + 1,
+        //         extraction.name,
+        //         "Safe"
+        //     );
+        // }
+        // extract the coordonate of 'id'
+        if extraction.name == "id" {
+            r1 = extraction.start.row;
+            c1 = extraction.start.column;
+            r2 = extraction.end.row;
+            c2 = extraction.end.column;
+            continue;
         }
         let input = [input_string.replace("unsafe ", " ")];
+        //tokenizer
         let tokenized_input = MultiThreadedTokenizer::encode_list(
             tokenizer,
             &input,
@@ -145,7 +161,7 @@ fn classify(
             .map(|input| Tensor::of_slice(&(input)))
             .collect::<Vec<_>>();
 
-        let device = Device::Cpu;
+        let device = Device::cuda_if_available();
         let input_tensor = Tensor::stack(tokenized_inputs.as_slice(), 0).to(device);
         let (batch_size, sequence_length) = (1, max_len as i64);
 
@@ -164,7 +180,7 @@ fn classify(
                 )
                 .logits
         });
-        println!("\nsigmoid = {:?}", output.sigmoid());
+        // println!("\nsigmoid = {:?}", output.sigmoid());
         let model_config = ConfigOption::from_file(ModelType::Roberta, config_path);
         let label_mapping = model_config.get_label_mapping().clone();
         let label_indices = output.argmax(-1, true).squeeze_dim(1);
@@ -178,7 +194,21 @@ fn classify(
                 .get(&label_indices[sentence_idx])
                 .unwrap()
                 .clone();
-            println!("{}: {}", &label_string, scores[sentence_idx]);
+            // println!("{}: {}", &label_string, scores[sentence_idx]);
+            println!(
+                "{},{},{},{},{},{}(prob={:.2})",
+                extracted_file
+                    .file
+                    .as_ref()
+                    .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+                    .unwrap_or("NO FILE"),
+                r1,
+                c1,
+                r2,
+                c2,
+                &label_string,
+                scores[sentence_idx]
+            );
         }
     }
     Ok(())
@@ -220,24 +250,55 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     if opts.sort {
         extracted_files.sort()
     }
-    let config_resource = Resource::Remote(RemoteResource {
-        url: "https://bertrust.s3.amazonaws.com/config.json".into(),
-        // url: "config.json".into(),
-        cache_subdir: "codebert-base/config".into(),
+    // let config_resource = Resource::Remote(RemoteResource {
+    //     url: "https://bertrust.s3.amazonaws.com/config.json".into(),
+    //     // url: "config.json".into(),
+    //     cache_subdir: "codebert-base/config".into(),
+    // });
+    // let vocab_resource = Resource::Remote(RemoteResource {
+    //     url: "https://huggingface.co/microsoft/codebert-base/resolve/main/vocab.json".into(),
+    //     cache_subdir: "codebert-base/vocab".into(),
+    // });
+    // let merges_resource = Resource::Remote(RemoteResource {
+    //     url: "https://huggingface.co/microsoft/codebert-base/resolve/main/merges.txt".into(),
+    //     cache_subdir: "codebert-base/merges".into(),
+    // });
+    // let weights_resource = Resource::Remote(RemoteResource {
+    //     url: "https://bertrust.s3.amazonaws.com/rust_model.ot".into(),
+    //     cache_subdir: "codebert-base/model".into(),
+    // });
+
+    // rustbert
+    let config_resource = Resource::Local(LocalResource {
+        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/config.json"),
     });
-    let vocab_resource = Resource::Remote(RemoteResource {
-        url: "https://huggingface.co/microsoft/codebert-base/resolve/main/vocab.json".into(),
-        cache_subdir: "codebert-base/vocab".into(),
+    let vocab_resource = Resource::Local(LocalResource {
+        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/vocab.json"),
     });
-    let merges_resource = Resource::Remote(RemoteResource {
-        url: "https://huggingface.co/microsoft/codebert-base/resolve/main/merges.txt".into(),
-        cache_subdir: "codebert-base/merges".into(),
+    let merges_resource = Resource::Local(LocalResource {
+        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/merges.txt"),
     });
-    let weights_resource = Resource::Remote(RemoteResource {
-        url: "https://bertrust.s3.amazonaws.com/rust_model.ot".into(),
-        cache_subdir: "codebert-base/model".into(),
+    let weights_resource = Resource::Local(LocalResource {
+        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/rust_model.ot"),
     });
 
+    //codebert-base
+    // let config_resource = Resource::Local(LocalResource {
+    //     local_path: PathBuf::from(
+    //         "/home/vincent/rust/curs/model/codebert-base/config.json",
+    //     ),
+    // });
+    // let vocab_resource = Resource::Local(LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/rust/curs/model/codebert-base/vocab.json"),
+    // });
+    // let merges_resource = Resource::Local(LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/rust/curs/model/codebert-base/merges.txt"),
+    // });
+    // let weights_resource = Resource::Local(LocalResource {
+    //     local_path: PathBuf::from(
+    //         "/home/vincent/rust/curs/model/codebert-base/rust_model.ot",
+    //     ),
+    // });
     let config_path = &config_resource.get_local_path()?;
     let vocab_path = vocab_resource.get_local_path()?;
     let merges_path = merges_resource.get_local_path()?;
@@ -254,9 +315,9 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     let config = BertConfig::from_file(config_path);
     vs.load(weights_path).ok();
     let model = RobertaForSequenceClassification::new(&vs.root(), &config);
-
+    // println!("extracted_file is {:?}", extracted_files);
     match opts.format {
-        QueryFormat::Classes => {
+        QueryFormat::Classes | QueryFormat::Json => {
             for extracted_file in extracted_files {
                 classify(config_path, &extracted_file, &model, &tokenizer).ok();
             }
@@ -268,10 +329,9 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
             }
         }
 
-        QueryFormat::Json => {
-            serde_json::to_writer(out, &extracted_files).context("could not write JSON output")?;
-        }
-
+        // QueryFormat::Json => {
+        //     serde_json::to_writer(out, &extracted_files).context("could not write JSON output")?;
+        // }
         QueryFormat::JsonLines => {
             for extracted_file in extracted_files {
                 writeln!(
@@ -504,7 +564,7 @@ mod tests {
             "--format=pretty-json",
             "--sort",
             "--no-gitignore",
-            "vendor/tree-sitter-rust/examples",
+            "/vendor/tree-sitter-rust/examples",
         ]))
     }
 
@@ -539,6 +599,20 @@ mod tests {
             "--sort",
             "--no-gitignore",
             "vendor/tree-sitter-elixir",
+        ]))
+    }
+    //safe unsafe classify
+    #[test]
+    fn rust_safe() {
+        insta::assert_snapshot!(call(&[
+            "curs",
+            "-q",
+            "rust",
+            "(function_item (identifier) @id) @function",
+            "--format=json",
+            // "--sort",
+            // "--no-gitignore",
+            "error.rs",
         ]))
     }
 }

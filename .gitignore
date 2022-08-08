@@ -14,3 +14,8 @@ target
 vendor/
 codeBERT_pl.bin
 *.code-workspace
+log/
+*.lock
+src/snapshots/
+curspy.py
+model/
