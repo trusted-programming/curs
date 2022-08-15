@@ -8,17 +8,21 @@ use crossbeam::channel;
 use language::Language;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rust_bert::bert::BertConfig;
-use rust_bert::pipelines::common::ConfigOption;
-use rust_bert::pipelines::common::ModelType;
-use rust_bert::resources::{LocalResource, RemoteResource, Resource};
+use rust_bert::pipelines::common::{ConfigOption, ModelType, TokenizerOption};
+use rust_bert::pipelines::sequence_classification::{
+    SequenceClassificationConfig, SequenceClassificationOption,
+};
+use rust_bert::resources::{LocalResource, RemoteResource, ResourceProvider};
 use rust_bert::roberta::RobertaForSequenceClassification;
 use rust_bert::Config;
-use rust_tokenizers::tokenizer::{MultiThreadedTokenizer, RobertaTokenizer, TruncationStrategy};
+use rust_tokenizers::tokenizer::{
+    MultiThreadedTokenizer, RobertaTokenizer, Tokenizer, TruncationStrategy,
+};
 use std::env;
 use std::io::{self, BufWriter, Write};
 use std::path::PathBuf;
 use tch::kind::Kind::Int64;
-use tch::{nn, no_grad, Device, Tensor};
+use tch::{nn, no_grad, Device, Kind, Tensor};
 use tree_sitter::Parser;
 
 #[global_allocator]
@@ -26,9 +30,7 @@ static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
 // cargo run --package curs --bin curs -q rust "(_)" error.rs
 // cargo test --package curs --bin curs -- tests
 // cargo test --package curs --bin curs -- tests::all_rust
-// ./curs -q rust '(_)' ../../error.rs
-// ./curs -q ruby '(_)' ../../vendor/tree-sitter-ruby
-//./curs --query "rust" "(function_item (identifier) @id) @function" ../../error.rs
+//./target/debug/curs --query "rust" "(function_item (identifier) @id) @function" ./error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
@@ -78,17 +80,14 @@ fn show_languages(mut out: impl Write) -> Result<()> {
 }
 
 fn classify(
-    config_path: &PathBuf,
+    config: &ConfigOption,
     extracted_file: &extractor::ExtractedFile,
-    model: &RobertaForSequenceClassification,
+    model: &SequenceClassificationOption,
     tokenizer: &RobertaTokenizer,
 ) -> Result<()> {
     //  Define input
     // Define the cordinate if extraction "id"
-    let mut r1 = 0;
-    let mut c1 = 0;
-    let mut r2 = 0;
-    let mut c2 = 0;
+    let [mut r1, mut c1, mut r2, mut c2] = [0, 0, 0, 0];
     for extraction in &extracted_file.matches {
         let input_string = format!("{}", extraction.text);
         // let is_unsafe = input_string.contains("unsafe fn ");
@@ -136,12 +135,18 @@ fn classify(
             &TruncationStrategy::LongestFirst,
             0,
         );
+        // let tokenized_input =
+        //     Tokenizer::encode_list(tokenizer, &input, 512, &TruncationStrategy::LongestFirst, 0);
         let max_len = tokenized_input
             .iter()
             .map(|input| input.token_ids.len())
             .max()
             .unwrap();
-        // println!("max len = {} > input length = {}", max_len, input[0].len());
+        // println!(
+        //     "max len = {} > input length = {}",
+        //     max_len,
+        //     input_string.len()
+        // );
         let tokenized_inputs = tokenized_input
             .iter()
             .map(|input| input.token_ids.clone())
@@ -162,28 +167,63 @@ fn classify(
             .collect::<Vec<_>>();
 
         let device = Device::cuda_if_available();
+        // let device = Device::Cpu;
         let input_tensor = Tensor::stack(tokenized_inputs.as_slice(), 0).to(device);
         let (batch_size, sequence_length) = (1, max_len as i64);
 
-        //    Forward pass
         let mask = Tensor::stack(tokenized_masks.as_slice(), 0).to(device);
         let token_type_ids = Tensor::zeros(&[batch_size, sequence_length], (Int64, device));
+
+        //pad to 512
+        // let pad_len = 512;
+        // let input_tensor = Tensor::stack(tokenized_inputs.as_slice(), 0).to(device);
+        // let (batch_size, sequence_length) = (1, pad_len as i64);
+        // let mask = Tensor::stack(tokenized_masks.as_slice(), 0).to(device);
+        // let token_type_ids = Tensor::zeros(&[batch_size, sequence_length], (Int64, device));
+        // let input_tensor = Tensor::cat(
+        //     &[
+        //         input_tensor,
+        //         Tensor::ones(&[1, pad_len - max_len as i64], (Int64, device)),
+        //     ],
+        //     1,
+        // );
+        // let mask = Tensor::cat(
+        //     &[
+        //         mask,
+        //         Tensor::zeros(&[1, pad_len - max_len as i64], (Int64, device)),
+        //     ],
+        //     1,
+        // );
+
+        // println!(
+        //     "tensor size is {:?},{:?},{:?}",
+        //     input_tensor.size(),
+        //     mask.size(),
+        //     token_type_ids.size()
+        // );
+        // println!("input_id is");
+        // input_tensor.print();
+        // println!("mask is ");
+        // mask.print();
+        // println!("type_id is");
+        // token_type_ids.print();
         let output = no_grad(|| {
-            model
-                .forward_t(
-                    Some(&input_tensor),
-                    Some(&mask),
-                    Some(&token_type_ids),
-                    None,
-                    None,
-                    false,
-                )
-                .logits
+            let output = model.forward_t(
+                Some(&input_tensor),
+                Some(&mask),
+                Some(&token_type_ids),
+                None,
+                None,
+                false,
+            );
+            output.softmax(-1, Kind::Float).detach().to(device)
         });
+
+        // print!("output is ");
+        // output.print();
         // println!("\nsigmoid = {:?}", output.sigmoid());
-        let model_config = ConfigOption::from_file(ModelType::Roberta, config_path);
-        let label_mapping = model_config.get_label_mapping().clone();
-        let label_indices = output.argmax(-1, true).squeeze_dim(1);
+        let label_mapping = config.get_label_mapping().clone();
+        let label_indices = output.as_ref().argmax(-1, true).squeeze_dim(1);
         let scores = output
             .gather(1, &label_indices.unsqueeze(-1), false)
             .squeeze_dim(1);
@@ -268,42 +308,56 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     //     cache_subdir: "codebert-base/model".into(),
     // });
 
-    // rustbert
-    let config_resource = Resource::Local(LocalResource {
-        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/config.json"),
-    });
-    let vocab_resource = Resource::Local(LocalResource {
-        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/vocab.json"),
-    });
-    let merges_resource = Resource::Local(LocalResource {
-        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/merges.txt"),
-    });
-    let weights_resource = Resource::Local(LocalResource {
-        local_path: PathBuf::from("/home/vincent/rust/curs/model/rustbert/rust_model.ot"),
-    });
+    // codebert for rust safe and unsafe
+    let config_resource = LocalResource {
+        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/config.json"),
+    };
+    let vocab_resource = LocalResource {
+        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/vocab.json"),
+    };
+    let merges_resource = LocalResource {
+        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/merges.txt"),
+    };
+    let weights_resource = LocalResource {
+        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/rust_model.ot"),
+    };
+
+    //roberta-base
+    // let config_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/config.json"),
+    // };
+    // let vocab_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/vocab.json"),
+    // };
+    // let merges_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/merges.txt"),
+    // };
+    // let weights_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/rust_model.ot"),
+    //     // local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/roberta-base.ot"),
+    // };
 
     //codebert-base
-    // let config_resource = Resource::Local(LocalResource {
-    //     local_path: PathBuf::from(
-    //         "/home/vincent/rust/curs/model/codebert-base/config.json",
-    //     ),
-    // });
-    // let vocab_resource = Resource::Local(LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/rust/curs/model/codebert-base/vocab.json"),
-    // });
-    // let merges_resource = Resource::Local(LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/rust/curs/model/codebert-base/merges.txt"),
-    // });
-    // let weights_resource = Resource::Local(LocalResource {
-    //     local_path: PathBuf::from(
-    //         "/home/vincent/rust/curs/model/codebert-base/rust_model.ot",
-    //     ),
-    // });
-    let config_path = &config_resource.get_local_path()?;
+    // let config_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/config.json"),
+    // };
+    // let vocab_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/vocab.json"),
+    // };
+    // let merges_resource = LocalResource {
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/merges.txt"),
+    // };
+    // let weights_resource = LocalResource {
+    //     // local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/rust_model.ot"),
+    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/codebert-base.ot"),
+    // };
+
+    let config_path = config_resource.get_local_path()?;
     let vocab_path = vocab_resource.get_local_path()?;
     let merges_path = merges_resource.get_local_path()?;
     let weights_path = weights_resource.get_local_path()?;
-
+    let device = Device::cuda_if_available();
+    // let device = Device::Cpu;
     let tokenizer = RobertaTokenizer::from_file(
         vocab_path.to_str().unwrap(),
         merges_path.to_str().unwrap(),
@@ -311,15 +365,27 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
         false,
     )?;
 
-    let mut vs = nn::VarStore::new(Device::cuda_if_available());
-    let config = BertConfig::from_file(config_path);
-    vs.load(weights_path).ok();
-    let model = RobertaForSequenceClassification::new(&vs.root(), &config);
+    // let tokenizer = TokenizerOption::from_file(
+    //     ModelType::Roberta,
+    //     vocab_path.to_str().unwrap(),
+    //     merges_path.as_deref().map(|path| path.to_str().unwrap()),
+    //     false,
+    //     false,
+    //     false,
+    // )?;
+
+    let mut vs = nn::VarStore::new(device);
+    // let config = BertConfig::from_file(config_path);
+    let config = ConfigOption::from_file(ModelType::Bert, config_path);
+    let model = SequenceClassificationOption::new(ModelType::Roberta, &vs.root(), &config)?;
+    // use "?" to load model correctly instead of ".ok()"
+    vs.load(weights_path)?;
+    // println!("model is {:?}", vs.variables());
     // println!("extracted_file is {:?}", extracted_files);
     match opts.format {
         QueryFormat::Classes | QueryFormat::Json => {
             for extracted_file in extracted_files {
-                classify(config_path, &extracted_file, &model, &tokenizer).ok();
+                classify(&config, &extracted_file, &model, &tokenizer).ok();
             }
         }
 

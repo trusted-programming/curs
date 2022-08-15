@@ -22,14 +22,14 @@ class Tokenizer():
         token_type_ids = []
         lst_files = []
         count_processed_files = 0
-        # cmd = [
-        #     "tree-grepper", "--query", "rust",
-        #     "(function_item (identifier) @id) @function", "-f", "json"
-        # ] + [f.name for f in self.data_path]
         cmd = [
             "tree-grepper", "--query", "rust",
             "(function_item (identifier) @id) @function", "-f", "json"
-        ] + ['./error.rs']
+        ] + [f.name for f in self.data_path]
+        # cmd = [
+        #     "tree-grepper", "--query", "rust",
+        #     "(function_item (identifier) @id) @function", "-f", "json"
+        # ] + ['./error.rs']
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         (out, err) = proc.communicate()
         files = json.loads(out)
@@ -61,7 +61,7 @@ class Tokenizer():
                     code_snippet = bytes(code_snippet, 'utf-8')
                     lst_files.append("%s,%d,%d,%d,%d" %
                                      (file['file'], r1, c1, r2, c2))
-                    print(code_snippet)
+                    # print("string len is ", len(code_snippet))
                     encoded_dict = self.tokenizer.encode_plus(
                         code_snippet.decode("utf-8"),  # Sentence to encode.
                         add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
@@ -76,6 +76,7 @@ class Tokenizer():
                     # And its attention mask (simply differentiates padding from non-padding).
                     attention_masks.append(encoded_dict['attention_mask'])
                     token_type_ids.append(encoded_dict['token_type_ids'])
+
             except Exception as e:
                 print(traceback.format_exc())
                 print(e, '??')

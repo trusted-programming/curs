@@ -159,8 +159,8 @@ def parse_arguments():
     parser.add_argument('--static_caps_output_dimension', type=int, default=8)
     parser.add_argument('--code_caps_output_dimension', type=int, default=8)
     parser.add_argument('--top_a', type=int, default=10)
-    # parser.add_argument('files', nargs='+', help='file to infer', type=open)
-    parser.add_argument('--files', nargs='+', help='file to infer', type=open)
+    parser.add_argument('files', nargs='+', help='file to infer', type=open)
+    # parser.add_argument('--files', nargs='+', help='file to infer', type=open)
     opt = parser.parse_args()
     return opt
 
@@ -195,6 +195,7 @@ def inference(model_file, datasets, files, device):
         with torch.no_grad():
             #Calculate loss
             outputs = model(input_ids, attention_masks, token_type_ids)
+            # print(outputs)
             probabilities = F.softmax(outputs, dim=-1)
             max_val, max_idx = torch.max(outputs.data, dim=1)
             if max_idx == 0:
