@@ -15,7 +15,6 @@ vendor/
 codeBERT_pl.bin
 *.code-workspace
 log/
-data/
 *.lock
 src/snapshots/
 curspy.py

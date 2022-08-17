@@ -26,13 +26,17 @@ or in 'envConfig' of work directory:
 ```bash
 export LIBTORCH=$libtorchDir$/libtorch
 export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
-source 'envConfig'
+source envConfig
 ```
 ### Example usage for rust curs:
 
 ```bash
 cargo build
 ./target/debug/curs data/error.rs
+```
+```Rust curs``` also supports classifling all rust files of one directory:
+```bash
+./target/debug/curs data/
 ```
 
 ## ```Python curs``` (Optional)
