@@ -22,8 +22,10 @@ export LIBTORCH=$libtorchDir$/libtorch
 export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 source .bashrc
 ```
-or source 'envConfig'
+or in 'envConfig' of work directory:
 ```bash
+export LIBTORCH=$libtorchDir$/libtorch
+export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 source 'envConfig'
 ```
 ### Example usage for rust curs:
@@ -42,14 +44,14 @@ Download the pretrained code model before building the package:
 wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
 mkdir -p curs/codeBERT
 mv codeBERT_pl.bin curs/codeBERT/
-wget http://bertrust.s3.amazonaws.com/tbcnn.zip
+wget http://bertrust.s3.amazonaws.com/tbcnn.zip (Optional)
 unzip tbcnn.zip
 ```
 Install the python requirements
 ```bash
 pip install -r requirements.txt
 ```
-If you prefer to use GPU/cuda, install pytorch:
+If you prefer to use GPU/cuda, install PyTorch:
 ```bash
 conda install pytorch==1.12.0 cudatoolkit=11.3 -c pytorch
 ```

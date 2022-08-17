@@ -273,24 +273,3 @@ if __name__ == "__main__":
         dataset, files = tokenizer.tokenize()
         model = os.path.join(opt.model_path, 'codeBERT_pl.bin')
         inference(model, dataset, files, device)
-
-
-# for debug codebert
-def debug():
-    opt = parse_arguments()
-    if opt.model != "":
-        opt.model_path = os.path.join(
-            os.path.dirname(os.path.abspath(curs.__file__)), opt.model)
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    USE_CUDA = torch.cuda.is_available()
-    device = torch.device("cuda" if USE_CUDA else "cpu")
-    # device = torch.device("cpu")
-    seed_val = 42
-    random.seed(seed_val)
-    np.random.seed(seed_val)
-    torch.manual_seed(seed_val)
-    torch.cuda.manual_seed_all(seed_val)
-    tokenizer = Tokenizer(opt.files)
-    dataset, files = tokenizer.tokenize()
-    model = os.path.join(opt.model_path, 'codeBERT_pl.bin')
-    inference(model, dataset, files, device)

@@ -20,10 +20,6 @@ use tree_sitter::Parser;
 
 #[global_allocator]
 static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
-// cargo run --package curs --bin curs -q rust "(_)" error.rs
-// cargo test --package curs --bin curs -- tests
-// cargo test --package curs --bin curs -- tests::all_rust
-//./target/debug/curs data/error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
