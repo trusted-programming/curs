@@ -18,4 +18,4 @@ log/
 *.lock
 src/snapshots/
 curspy.py
-model/
+.cache/

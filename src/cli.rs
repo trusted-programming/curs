@@ -2,7 +2,7 @@ use crate::extractor::Extractor;
 use crate::extractor_chooser::ExtractorChooser;
 use crate::language::Language;
 use anyhow::{bail, Context, Error, Result};
-use clap::{crate_authors, crate_version, Command, Arg, ArgMatches};
+use clap::{crate_authors, crate_version, Arg, ArgMatches, Command};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -54,9 +54,9 @@ impl Invocation {
                     )
                     .number_of_values(2)
                     .value_names(&["LANGUAGE", "QUERY"])
-                    .required_unless_present("languages")
-                    .multiple_values(true)
-                    .default_values(&["rust", "(function_item)"])
+                    // .required_unless_present("languages")
+                    // .multiple_values(true)
+                    .default_values(&["rust", "(function_item (identifier) @id) @function"])
             )
             .arg(
                 Arg::new("no-gitignore")
@@ -65,9 +65,9 @@ impl Invocation {
             )
             .arg(
                 Arg::new("PATHS")
+                    .required_unless_present("PATHS")
                     .default_value(".")
                     .help("places to search for matches")
-                    .multiple_values(true)
             )
             .arg(
                 Arg::new("FORMAT")
@@ -78,20 +78,21 @@ impl Invocation {
                 .help("what format should we output lines in?")
             )
             .arg(
-                Arg::new("sort")
+                Arg::new("SORT")
                 .long("sort")
                 .help("sort matches stably")
                 .long_help("sort matches stably. If this is not specified, output ordering will vary because due to parallelism. Caution: this adds a worst-case `O(n * log(n))` overhead, where `n` is the number of files matched. Avoid it if possible if you care about performance.")
             )
             .arg(
-                Arg::new("languages")
-                .long("languages")
+                Arg::new("LANGUAGE")
+                .long("language")
+                .short('l')
                 .help("print the language names tree-grepper knows about")
             )
             .try_get_matches_from(args)
             .context("could not parse args")?;
 
-        if matches.is_present("languages") {
+        if matches.is_present("LANGUAGE") {
             Ok(Self::ShowLanguages)
         } else {
             Ok(Self::DoQuery(QueryOpts {
@@ -102,7 +103,7 @@ impl Invocation {
                     matches.value_of("FORMAT").context("format not provided")?,
                 )
                 .context("could not set format")?,
-                sort: matches.is_present("sort"),
+                sort: matches.is_present("SORT"),
             }))
         }
     }

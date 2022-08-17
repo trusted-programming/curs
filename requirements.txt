@@ -1,8 +1,11 @@
-torch==1.10.2
+#conda install pytorch==1.12.0 cudatoolkit=11.3 -c pytorch
+torch==1.12.0
 tqdm==4.62.3
 sklearn==0.0
-transformers==4.15.0
+transformers==4.21.0
 bidict==0.21.4
 tree-sitter-parsers==0.0.7
-tensorflow==2.7.0
+tensorflow==2.9.0
 keras-radam==0.15.0
+pickle5==0.0.12
+nltk==3.7

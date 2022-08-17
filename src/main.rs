@@ -7,17 +7,10 @@ use cli::{Invocation, QueryFormat, QueryOpts};
 use crossbeam::channel;
 use language::Language;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use rust_bert::bert::BertConfig;
 use rust_bert::pipelines::common::{ConfigOption, ModelType, TokenizerOption};
-use rust_bert::pipelines::sequence_classification::{
-    SequenceClassificationConfig, SequenceClassificationOption,
-};
-use rust_bert::resources::{LocalResource, RemoteResource, ResourceProvider};
-use rust_bert::roberta::RobertaForSequenceClassification;
-use rust_bert::Config;
-use rust_tokenizers::tokenizer::{
-    MultiThreadedTokenizer, RobertaTokenizer, Tokenizer, TruncationStrategy,
-};
+use rust_bert::pipelines::sequence_classification::SequenceClassificationOption;
+use rust_bert::resources::{LocalResource, ResourceProvider};
+use rust_tokenizers::tokenizer::TruncationStrategy;
 use std::env;
 use std::io::{self, BufWriter, Write};
 use std::path::PathBuf;
@@ -30,7 +23,7 @@ static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
 // cargo run --package curs --bin curs -q rust "(_)" error.rs
 // cargo test --package curs --bin curs -- tests
 // cargo test --package curs --bin curs -- tests::all_rust
-//./target/debug/curs --query "rust" "(function_item (identifier) @id) @function" ./error.rs
+//./target/debug/curs data/error.rs
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
@@ -83,41 +76,13 @@ fn classify(
     config: &ConfigOption,
     extracted_file: &extractor::ExtractedFile,
     model: &SequenceClassificationOption,
-    tokenizer: &RobertaTokenizer,
+    tokenizer: &TokenizerOption,
 ) -> Result<()> {
     //  Define input
     // Define the cordinate if extraction "id"
     let [mut r1, mut c1, mut r2, mut c2] = [0, 0, 0, 0];
     for extraction in &extracted_file.matches {
         let input_string = format!("{}", extraction.text);
-        // let is_unsafe = input_string.contains("unsafe fn ");
-        // if is_unsafe {
-        //     print!(
-        //         "{}:{}:{}:{}:{}:",
-        //         extracted_file
-        //             .file
-        //             .as_ref()
-        //             .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
-        //             .unwrap_or("NO FILE"),
-        //         extraction.start.row + 1,
-        //         extraction.start.column + 1,
-        //         extraction.name,
-        //         "Unsafe"
-        //     );
-        // } else {
-        //     print!(
-        //         "{}:{}:{}:{}:{}:",
-        //         extracted_file
-        //             .file
-        //             .as_ref()
-        //             .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
-        //             .unwrap_or("NO FILE"),
-        //         extraction.start.row + 1,
-        //         extraction.start.column + 1,
-        //         extraction.name,
-        //         "Safe"
-        //     );
-        // }
         // extract the coordonate of 'id'
         if extraction.name == "id" {
             r1 = extraction.start.row;
@@ -128,25 +93,13 @@ fn classify(
         }
         let input = [input_string.replace("unsafe ", " ")];
         //tokenizer
-        let tokenized_input = MultiThreadedTokenizer::encode_list(
-            tokenizer,
-            &input,
-            512,
-            &TruncationStrategy::LongestFirst,
-            0,
-        );
-        // let tokenized_input =
-        //     Tokenizer::encode_list(tokenizer, &input, 512, &TruncationStrategy::LongestFirst, 0);
+        let tokenized_input =
+            tokenizer.encode_list(&input, 512, &TruncationStrategy::LongestFirst, 0);
         let max_len = tokenized_input
             .iter()
             .map(|input| input.token_ids.len())
             .max()
             .unwrap();
-        // println!(
-        //     "max len = {} > input length = {}",
-        //     max_len,
-        //     input_string.len()
-        // );
         let tokenized_inputs = tokenized_input
             .iter()
             .map(|input| input.token_ids.clone())
@@ -174,39 +127,6 @@ fn classify(
         let mask = Tensor::stack(tokenized_masks.as_slice(), 0).to(device);
         let token_type_ids = Tensor::zeros(&[batch_size, sequence_length], (Int64, device));
 
-        //pad to 512
-        // let pad_len = 512;
-        // let input_tensor = Tensor::stack(tokenized_inputs.as_slice(), 0).to(device);
-        // let (batch_size, sequence_length) = (1, pad_len as i64);
-        // let mask = Tensor::stack(tokenized_masks.as_slice(), 0).to(device);
-        // let token_type_ids = Tensor::zeros(&[batch_size, sequence_length], (Int64, device));
-        // let input_tensor = Tensor::cat(
-        //     &[
-        //         input_tensor,
-        //         Tensor::ones(&[1, pad_len - max_len as i64], (Int64, device)),
-        //     ],
-        //     1,
-        // );
-        // let mask = Tensor::cat(
-        //     &[
-        //         mask,
-        //         Tensor::zeros(&[1, pad_len - max_len as i64], (Int64, device)),
-        //     ],
-        //     1,
-        // );
-
-        // println!(
-        //     "tensor size is {:?},{:?},{:?}",
-        //     input_tensor.size(),
-        //     mask.size(),
-        //     token_type_ids.size()
-        // );
-        // println!("input_id is");
-        // input_tensor.print();
-        // println!("mask is ");
-        // mask.print();
-        // println!("type_id is");
-        // token_type_ids.print();
         let output = no_grad(|| {
             let output = model.forward_t(
                 Some(&input_tensor),
@@ -234,7 +154,6 @@ fn classify(
                 .get(&label_indices[sentence_idx])
                 .unwrap()
                 .clone();
-            // println!("{}: {}", &label_string, scores[sentence_idx]);
             println!(
                 "{},{},{},{},{},{}(prob={:.2})",
                 extracted_file
@@ -290,100 +209,68 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     if opts.sort {
         extracted_files.sort()
     }
-    // let config_resource = Resource::Remote(RemoteResource {
-    //     url: "https://bertrust.s3.amazonaws.com/config.json".into(),
-    //     // url: "config.json".into(),
-    //     cache_subdir: "codebert-base/config".into(),
-    // });
-    // let vocab_resource = Resource::Remote(RemoteResource {
-    //     url: "https://huggingface.co/microsoft/codebert-base/resolve/main/vocab.json".into(),
-    //     cache_subdir: "codebert-base/vocab".into(),
-    // });
-    // let merges_resource = Resource::Remote(RemoteResource {
-    //     url: "https://huggingface.co/microsoft/codebert-base/resolve/main/merges.txt".into(),
-    //     cache_subdir: "codebert-base/merges".into(),
-    // });
-    // let weights_resource = Resource::Remote(RemoteResource {
-    //     url: "https://bertrust.s3.amazonaws.com/rust_model.ot".into(),
-    //     cache_subdir: "codebert-base/model".into(),
-    // });
 
     // codebert for rust safe and unsafe
     let config_resource = LocalResource {
-        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/config.json"),
+        local_path: PathBuf::from(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .into_os_string()
+                .into_string()
+                .unwrap()
+                + "/.cache/codebert/config.json",
+        ),
     };
     let vocab_resource = LocalResource {
-        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/vocab.json"),
+        local_path: PathBuf::from(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .into_os_string()
+                .into_string()
+                .unwrap()
+                + "/.cache/codebert/vocab.json",
+        ),
     };
     let merges_resource = LocalResource {
-        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/merges.txt"),
+        local_path: PathBuf::from(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .into_os_string()
+                .into_string()
+                .unwrap()
+                + "/.cache/codebert/merges.txt",
+        ),
     };
     let weights_resource = LocalResource {
-        local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert/rust_model.ot"),
+        local_path: PathBuf::from(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .into_os_string()
+                .into_string()
+                .unwrap()
+                + "/.cache//codebert/rust_model.ot",
+        ),
     };
-
-    //roberta-base
-    // let config_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/config.json"),
-    // };
-    // let vocab_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/vocab.json"),
-    // };
-    // let merges_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/merges.txt"),
-    // };
-    // let weights_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/rust_model.ot"),
-    //     // local_path: PathBuf::from("/home/vincent/.cache/curs/model/roberta-base/roberta-base.ot"),
-    // };
-
-    //codebert-base
-    // let config_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/config.json"),
-    // };
-    // let vocab_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/vocab.json"),
-    // };
-    // let merges_resource = LocalResource {
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/merges.txt"),
-    // };
-    // let weights_resource = LocalResource {
-    //     // local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/rust_model.ot"),
-    //     local_path: PathBuf::from("/home/vincent/.cache/curs/model/codebert-base/codebert-base.ot"),
-    // };
 
     let config_path = config_resource.get_local_path()?;
     let vocab_path = vocab_resource.get_local_path()?;
-    let merges_path = merges_resource.get_local_path()?;
+    let merges_path = Some(merges_resource.get_local_path()?);
     let weights_path = weights_resource.get_local_path()?;
     let device = Device::cuda_if_available();
     // let device = Device::Cpu;
-    let tokenizer = RobertaTokenizer::from_file(
+
+    let tokenizer = TokenizerOption::from_file(
+        ModelType::Roberta,
         vocab_path.to_str().unwrap(),
-        merges_path.to_str().unwrap(),
+        merges_path.as_deref().map(|path| path.to_str().unwrap()),
         false,
+        None,
         false,
     )?;
 
-    // let tokenizer = TokenizerOption::from_file(
-    //     ModelType::Roberta,
-    //     vocab_path.to_str().unwrap(),
-    //     merges_path.as_deref().map(|path| path.to_str().unwrap()),
-    //     false,
-    //     false,
-    //     false,
-    // )?;
-
     let mut vs = nn::VarStore::new(device);
-    // let config = BertConfig::from_file(config_path);
     let config = ConfigOption::from_file(ModelType::Bert, config_path);
     let model = SequenceClassificationOption::new(ModelType::Roberta, &vs.root(), &config)?;
     // use "?" to load model correctly instead of ".ok()"
     vs.load(weights_path)?;
-    // println!("model is {:?}", vs.variables());
-    // println!("extracted_file is {:?}", extracted_files);
     match opts.format {
-        QueryFormat::Classes | QueryFormat::Json => {
+        QueryFormat::Classes => {
             for extracted_file in extracted_files {
                 classify(&config, &extracted_file, &model, &tokenizer).ok();
             }
@@ -395,9 +282,9 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
             }
         }
 
-        // QueryFormat::Json => {
-        //     serde_json::to_writer(out, &extracted_files).context("could not write JSON output")?;
-        // }
+        QueryFormat::Json => {
+            serde_json::to_writer(out, &extracted_files).context("could not write JSON output")?;
+        }
         QueryFormat::JsonLines => {
             for extracted_file in extracted_files {
                 writeln!(
@@ -667,7 +554,7 @@ mod tests {
             "vendor/tree-sitter-elixir",
         ]))
     }
-    //safe unsafe classify
+    //rust safe unsafe classify
     #[test]
     fn rust_safe() {
         insta::assert_snapshot!(call(&[
@@ -675,10 +562,10 @@ mod tests {
             "-q",
             "rust",
             "(function_item (identifier) @id) @function",
-            "--format=json",
-            // "--sort",
-            // "--no-gitignore",
-            "error.rs",
+            "--format=classes",
+            "--sort",
+            "--no-gitignore",
+            "data/error.rs",
         ]))
     }
 }

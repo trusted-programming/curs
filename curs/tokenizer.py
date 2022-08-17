@@ -26,10 +26,6 @@ class Tokenizer():
             "tree-grepper", "--query", "rust",
             "(function_item (identifier) @id) @function", "-f", "json"
         ] + [f.name for f in self.data_path]
-        # cmd = [
-        #     "tree-grepper", "--query", "rust",
-        #     "(function_item (identifier) @id) @function", "-f", "json"
-        # ] + ['./error.rs']
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         (out, err) = proc.communicate()
         files = json.loads(out)

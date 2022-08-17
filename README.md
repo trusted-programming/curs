@@ -1,51 +1,41 @@
 # Classify unsafe Rust code
 
 For each function in Rust, ```curs``` infers whether it is unsafe or not.
+```curs``` support three forms of runtime environment including on ```Rust curs```, ```Python curs```, ```Pypi curs```.
 
-## Installation:
+## ```Rust curs```
+### Runtime dependencies for rust curs
 
+Download the `tree-grepper` vendor and pretrained model.
 ```bash
-pip install http://bertrust.s3.amazonaws.com/curs-0.0.1-py3-none-any.whl
+bash get_model.sh
 ```
-
-## Example usage:
-
+It uses `libtorch-1.12.0` to inference curs. Download the libtorch with CPU or CUDA from following links:
 ```bash
-curs ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
-# default, using a pretrained CodeBERT model
-curs --model=codeBERT ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
-# alternative using a pretrained TBCNN model
-curs --model=tbcnn ~/.cargo/registry/src/github.com-1ecc6299db9ec823/anyhow-1.0.58/src/error.rs
-```
-
-## Runtime dependencies
-
-It uses `tree-grepper` to parse Rust functions.
-```bash
-mkdir vendor & cd vendor
-git clone https://github.com/tree-sitter/tree-sitter-cpp.git
-git clone https://github.com/elixir-lang/tree-sitter-elixir.git
-git clone https://github.com/elm-tooling/tree-sitter-elm.git
-git clone https://github.com/tree-sitter/tree-sitter-haskell.git
-git clone https://github.com/tree-sitter/tree-sitter-ruby.git
-git clone https://github.com/tree-sitter/tree-sitter-rust.git
-git clone https://github.com/tree-sitter/tree-sitter-javascript.git
-git clone https://github.com/tree-sitter/tree-sitter-php.git
-git clone https://github.com/tree-sitter/tree-sitter-typescript.git
-cargo install --git https://github.com/BrianHicks/tree-grepper
-```
-It uses `libtorch-1.10.2` to inference bert. Download the libtorch with CPU or CUDA from following links:
-```bash
-CPU: https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.2%2Bcpu.zip
-CUDA: https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-with-deps-1.10.2%2Bcu113.zip
+CPU: https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.0%2Bcpu.zip
+CUDA: https://download.pytorch.org/libtorch/cu116/libtorch-cxx11-abi-shared-with-deps-1.12.0%2Bcu116.zip
 ```
 Unzip the file and set the environment path in .bashrc:
 
 ```bash
 export LIBTORCH=$libtorchDir$/libtorch
 export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
+source .bashrc
 ```
-## Build dependencies
+or source 'envConfig'
+```bash
+source 'envConfig'
+```
+### Example usage for rust curs:
+
+```bash
+cargo build
+./target/debug/curs data/error.rs
+```
+
+## ```Python curs``` (Optional)
+
+### Runtime dependencies for python curs
 
 Download the pretrained code model before building the package:
 ```bash
@@ -55,24 +45,37 @@ mv codeBERT_pl.bin curs/codeBERT/
 wget http://bertrust.s3.amazonaws.com/tbcnn.zip
 unzip tbcnn.zip
 ```
-
-## Datasets
-* curs-0.0.1-py3-none-any.whl   # package distribution
-* uniq-unsafe-safe-asm.tar.bz2  # Assembler of Rust functions classified into safe and unsafe folders
-  - codeBERT_pl.bin             # pretrained codeBERT model for classifying unsafe Rust code
-  - tbcnn.zip                   # pretrained TBCNN model for classifying unsafe Rust code
-* unique-safe-unsafe-fn.tar.bz2 # Rust functions classified into safe and unsafe folders
+Install the python requirements
+```bash
+pip install -r requirements.txt
+```
+If you prefer to use GPU/cuda, install pytorch:
+```bash
+conda install pytorch==1.12.0 cudatoolkit=11.3 -c pytorch
+```
+### Example usage for python curs:
 
 ```bash
-files=$(s3cmd ls s3://bertrust | awk '{system("basename " $4)}')
-# download files
-for file in $files; do
-	wget http://bertrust.s3.amazonaws.com/$file
-done
-# upload files
-for file in $files; do
-	s3cmd put $file s3://bertrust
-done
-# recursively set acl of the files in the bucket to public accessible
-s3cmd setacl -Pr s3://bertrust
+python -m curs.__main__ data/error.rs
+# default, using a pretrained CodeBERT model
+python -m curs.__main__ --model=codeBERT data/error.rs
+# alternative using a pretrained TBCNN model
+python -m curs.__main__ --model=tbcnn data/error.rs
+```
+
+## ```Pypi curs``` (Optional)
+### Pypi curs installation:
+
+```bash
+pip install http://bertrust.s3.amazonaws.com/curs-0.0.1-py3-none-any.whl
+```
+
+## Example usage for pypi curs:
+
+```bash
+curs data/error.rs
+# default, using a pretrained CodeBERT model
+curs --model=codeBERT data/error.rs
+# alternative using a pretrained TBCNN model
+curs --model=tbcnn data/error.rs
 ```

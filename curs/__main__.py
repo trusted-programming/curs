@@ -1,7 +1,6 @@
 import torch
 from tqdm import tqdm
 import argparse
-import copy
 import numpy as np
 import os
 import pickle5 as pickle
@@ -41,7 +40,6 @@ from .util import util_functions
 import curs
 
 
-# python -m curs.__main__ ./error.rs
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--worker',
@@ -160,7 +158,6 @@ def parse_arguments():
     parser.add_argument('--code_caps_output_dimension', type=int, default=8)
     parser.add_argument('--top_a', type=int, default=10)
     parser.add_argument('files', nargs='+', help='file to infer', type=open)
-    # parser.add_argument('--files', nargs='+', help='file to infer', type=open)
     opt = parser.parse_args()
     return opt
 
@@ -172,7 +169,7 @@ def inference(model_file, datasets, files, device):
     if os.path.exists(model_file):
         model_py = os.path.join(
             os.path.dirname(os.path.abspath(curs.__file__)), 'model.py')
-        shutil.copyfile(model_py, "model.py")
+        # shutil.copyfile(model_py, "model.py")
         model = torch.load(model_file, map_location=device)
     else:
         print(
