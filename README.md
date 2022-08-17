@@ -44,6 +44,7 @@ Download the pretrained code model before building the package:
 wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
 mkdir -p curs/codeBERT
 mv codeBERT_pl.bin curs/codeBERT/
+cd curs
 wget http://bertrust.s3.amazonaws.com/tbcnn.zip (Optional)
 unzip tbcnn.zip
 ```

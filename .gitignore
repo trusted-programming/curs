@@ -13,9 +13,7 @@ curs/tbcnn/*
 target
 vendor/
 codeBERT_pl.bin
-tbcnn/
 *.code-workspace
-log/
 *.lock
 src/snapshots/
 curspy.py
