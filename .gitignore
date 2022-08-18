@@ -15,6 +15,7 @@ vendor/
 docker/
 codeBERT_pl.bin
 *.code-workspace
+.vscode/
 log/
 *.lock
 src/snapshots/
