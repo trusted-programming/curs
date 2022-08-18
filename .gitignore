@@ -19,3 +19,4 @@ log/
 src/snapshots/
 curspy.py
 .cache/
+tree-grepper/

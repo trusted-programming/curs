@@ -5,8 +5,10 @@ For each function in Rust, ```curs``` infers whether it is unsafe or not.
 
 ## ```Rust curs```
 ### Runtime dependencies for rust curs
-
-Download the `tree-grepper` vendor and pretrained model.
+```bash
+sudo apt install build-essential cmake pkg-config libssl-dev wget zip git
+```
+Download the `tree-grepper` vendor and pretrained model:
 ```bash
 bash get_model.sh
 ```

@@ -169,7 +169,7 @@ def inference(model_file, datasets, files, device):
     if os.path.exists(model_file):
         model_py = os.path.join(
             os.path.dirname(os.path.abspath(curs.__file__)), 'model.py')
-        # shutil.copyfile(model_py, "model.py")
+        shutil.copyfile(model_py, "model.py")
         model = torch.load(model_file, map_location=device)
     else:
         print(
