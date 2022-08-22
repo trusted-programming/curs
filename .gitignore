@@ -22,3 +22,6 @@ src/snapshots/
 curspy.py
 .cache/
 tree-grepper/
+prepare_data.sh
+data_source.txt
+data/
