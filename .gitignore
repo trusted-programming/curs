@@ -24,3 +24,4 @@ tree-grepper/
 data_source.txt
 data/
 Cargo.lock
+scripts/profiler.py
