@@ -22,5 +22,5 @@ curspy.py
 .cache/
 tree-grepper/
 data_source.txt
-prepare_data.sh
 data/
+Cargo.lock

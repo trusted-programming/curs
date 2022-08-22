@@ -10,7 +10,7 @@ sudo apt install build-essential cmake pkg-config libssl-dev wget zip git
 ```
 Download the `tree-grepper` vendor and pretrained model:
 ```bash
-bash get_model.sh
+bash ./scripts/runtime.sh
 ```
 It uses `libtorch-1.12.0` to inference curs. Download the libtorch with CPU or CUDA from following links:
 ```bash
@@ -29,6 +29,11 @@ or in 'envConfig' of work directory:
 export LIBTORCH=$libtorchDir$/libtorch
 export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 source envConfig
+```
+### Prepare rust data for curs test:
+50 rust files for testing is elaboratly selected from open-source rust project including on `rust-openssl`, `tokio`, `anyhow`, `hyper`, `rand`, `regex` and `rayon`:
+```bash
+bash ./scripts/prepare_data.sh
 ```
 ### Example usage for rust curs:
 
