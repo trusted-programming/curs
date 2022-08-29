@@ -1,9 +1,20 @@
 # Classify unsafe Rust code
 
-For each function in Rust, ```curs``` infers whether it is unsafe or not.
-```curs``` support three forms of runtime environment including on ```Rust curs```, ```Python curs```, ```Pypi curs```.
+For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers. However, the `unsafe` keyword is not necessary if it can be taken out while the program is compiled successfully.
 
-## ```Rust curs```
+`curs` infers the necessity of `unsafe` keywords without the need of recompiling. `curs` trains a [microsoft/codebert](https://github.com/microsoft/CodeBERT) based model and take advantage of bert's strong reasoning capability to inference the necessity of `unsafe`.
+
+`curs` support three forms of runtime environment including on `Rust curs`, `Python curs`, `Pypi curs`.
+
+## `Performance`
+
+It costs 2.06s and 2.90s on average for `Rust curs` inferencing one rust file on Intel I7-12700K CPU and NVIDIA 3080 12GB GPU, seperately.
+
+`Rust curs` achieves up to 6.58X and 13.04X performance speedup over `Python curs` for GPU and CPU, seperately.
+![Inference speedup](./Img/speedup.png)
+<center>Inference speedup of Rust curs over Python curs</center>
+
+## `Rust curs`
 ### Runtime dependencies for rust curs
 ```bash
 sudo apt install build-essential cmake pkg-config libssl-dev wget zip git
@@ -41,12 +52,12 @@ bash ./scripts/prepare_data.sh
 cargo build
 ./target/debug/curs data/error.rs
 ```
-```Rust curs``` also supports classifling all rust files of one directory:
+`Rust curs` also supports classifling all rust files of one directory:
 ```bash
 ./target/debug/curs data/
 ```
 
-## ```Python curs``` (Optional)
+## `Python curs` (Optional)
 
 ### Runtime dependencies for python curs
 
@@ -77,7 +88,7 @@ python -m curs.__main__ --model=codeBERT data/error.rs
 python -m curs.__main__ --model=tbcnn data/error.rs
 ```
 
-## ```Pypi curs``` (Optional)
+## `Pypi curs` (Optional)
 ### Pypi curs installation:
 
 ```bash

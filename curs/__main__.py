@@ -261,9 +261,13 @@ if __name__ == "__main__":
                     print('Uknown category')
     else:
         # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
++        # USE_CUDA = False
         USE_CUDA = torch.cuda.is_available()
         device = torch.device("cuda" if USE_CUDA else "cpu")
-        # device = torch.device("cpu")
+        if device == torch.device("cpu"):
++            print("inference device: cpu")
++        else:
++            print("inference device: cuda")
         seed_val = 42
         random.seed(seed_val)
         np.random.seed(seed_val)

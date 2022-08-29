@@ -250,7 +250,11 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     let weights_path = weights_resource.get_local_path()?;
     let device = Device::cuda_if_available();
     // let device = Device::Cpu;
-
+    if device == Device::Cpu {
+        println!("inference device: cpu");
+    } else {
+        println!("inference device: cuda");
+    }
     let tokenizer = TokenizerOption::from_file(
         ModelType::Roberta,
         vocab_path.to_str().unwrap(),
