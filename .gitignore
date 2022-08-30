@@ -26,3 +26,4 @@ data/
 Cargo.lock
 scripts/profiler.py
 scripts/ram.py
+src/snapshots/
