@@ -1,5 +1,4 @@
 import pickle
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 import numpy as np
 import random
 
