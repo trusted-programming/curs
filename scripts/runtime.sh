@@ -21,11 +21,3 @@ cd tree-grepper
 cargo install --path .
 cd ..
 echo "tree-grepper vendor installed!"
-
-echo "Downloading model to ./.cache/codebert/"
-mkdir -p ./.cache/codebert && cd ./.cache/codebert
-wget https://link.jscdn.cn/sharepoint/aHR0cHM6Ly90Z2JuMDEtbXkuc2hhcmVwb2ludC5jb20vOnU6L2cvcGVyc29uYWwveGlhb2hhbmdfejVfdG4vRVhIY0xLVEprXzlIanlDUTJwYXFFNjhCNXUxZnJucHJwV3pEdXJJeEFwbTJhZz9lPWd6NjU2dA.json -O config.json --unlink
-wget https://link.jscdn.cn/sharepoint/aHR0cHM6Ly90Z2JuMDEtbXkuc2hhcmVwb2ludC5jb20vOnU6L2cvcGVyc29uYWwveGlhb2hhbmdfejVfdG4vRVN2NVdIRGRza1pCbFBSWUxYSk52Y2dCbG0xQWUxakYyZFJHazZIbEdrS3psZz9lPTNDMFY3RQ.json -O vocab.json --unlink
-wget https://link.jscdn.cn/sharepoint/aHR0cHM6Ly90Z2JuMDEtbXkuc2hhcmVwb2ludC5jb20vOnQ6L2cvcGVyc29uYWwveGlhb2hhbmdfejVfdG4vRWMwVTVxQ2ZMTE5IdkxqVXhtdUlyTDBCSDFPNkxmeXpXdFg1YVM1N2hNZmFWUT9lPWs5V05JQQ.txt -O merges.txt --unlink
-wget https://link.jscdn.cn/sharepoint/aHR0cHM6Ly90Z2JuMDEtbXkuc2hhcmVwb2ludC5jb20vOnU6L2cvcGVyc29uYWwveGlhb2hhbmdfejVfdG4vRWY3WlV1dWZJTEpJcWx4b0VxemxvNDBCLTE5Ni1vbnZSSmFYOFNrWG8tS2xFZz9lPWRDQ2xQUQ.ot -O rust_model.ot --unlink
-echo "Download model Done!"

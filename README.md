@@ -19,7 +19,7 @@ It costs 2.06s and 2.90s on average for `Rust curs` inferencing one rust file on
 ```bash
 sudo apt install build-essential cmake pkg-config libssl-dev wget zip git
 ```
-Download the `tree-grepper` vendor and pretrained model:
+Download the `tree-grepper` vendor:
 ```bash
 bash ./scripts/runtime.sh
 ```
@@ -49,12 +49,11 @@ bash ./scripts/prepare_data.sh
 ### Example usage for rust curs:
 
 ```bash
-cargo build
-./target/debug/curs data/error.rs
+cargo run data/error.rs
 ```
 `Rust curs` also supports classifling all rust files of one directory:
 ```bash
-./target/debug/curs data/
+cargo run data/
 ```
 
 ## `Python curs` (Optional)
@@ -63,9 +62,9 @@ cargo build
 
 Download the pretrained code model before building the package:
 ```bash
-wget http://bertrust.s3.amazonaws.com/codeBERT_pl.bin
+wget https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/pytorch_model.bin
 mkdir -p curs/codeBERT
-mv codeBERT_pl.bin curs/codeBERT/
+mv pytorch_model.bin curs/codeBERT/
 cd curs
 wget http://bertrust.s3.amazonaws.com/tbcnn.zip (Optional)
 unzip tbcnn.zip

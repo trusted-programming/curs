@@ -261,19 +261,18 @@ if __name__ == "__main__":
                     print('Uknown category')
     else:
         # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-+        # USE_CUDA = False
+        # USE_CUDA = False
         USE_CUDA = torch.cuda.is_available()
         device = torch.device("cuda" if USE_CUDA else "cpu")
         if device == torch.device("cpu"):
-+            print("inference device: cpu")
-+        else:
-+            print("inference device: cuda")
+            print("inference device: cpu")
+        else:
+            print("inference device: cuda")
         seed_val = 42
         random.seed(seed_val)
-        np.random.seed(seed_val)
         torch.manual_seed(seed_val)
         torch.cuda.manual_seed_all(seed_val)
         tokenizer = Tokenizer(opt.files)
         dataset, files = tokenizer.tokenize()
-        model = os.path.join(opt.model_path, 'codeBERT_pl.bin')
+        model = os.path.join(opt.model_path, 'pytorch_model.bin')
         inference(model, dataset, files, device)
