@@ -12,13 +12,8 @@ curs/codeBERT/*
 curs/tbcnn/*
 target/
 vendor/
-docker/
-codeBERT_pl.bin
-*.code-workspace
-.vscode/
 log/
 src/snapshots/
-curspy.py
 .cache/
 tree-grepper/
 data_source.txt

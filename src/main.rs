@@ -9,11 +9,10 @@ use language::Language;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rust_bert::pipelines::common::{ConfigOption, ModelType, TokenizerOption};
 use rust_bert::pipelines::sequence_classification::SequenceClassificationOption;
-use rust_bert::resources::{LocalResource, ResourceProvider};
+use rust_bert::resources::{RemoteResource, ResourceProvider};
 use rust_tokenizers::tokenizer::TruncationStrategy;
 use std::env;
 use std::io::{self, BufWriter, Write};
-use std::path::PathBuf;
 use tch::kind::Kind::Int64;
 use tch::{nn, no_grad, Device, Kind, Tensor};
 use tree_sitter::Parser;
@@ -134,10 +133,6 @@ fn classify(
             );
             output.softmax(-1, Kind::Float).detach().to(device)
         });
-
-        // print!("output is ");
-        // output.print();
-        // println!("\nsigmoid = {:?}", output.sigmoid());
         let label_mapping = config.get_label_mapping().clone();
         let label_indices = output.as_ref().argmax(-1, true).squeeze_dim(1);
         let scores = output
@@ -168,7 +163,6 @@ fn classify(
     }
     Ok(())
 }
-
 fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     // You might think "why not use ParallelBridge here?" Well, the quick answer
     // is that I benchmarked it and having things separated here and handling
@@ -206,44 +200,22 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
         extracted_files.sort()
     }
 
-    // codebert for rust safe and unsafe
-    let config_resource = LocalResource {
-        local_path: PathBuf::from(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .into_os_string()
-                .into_string()
-                .unwrap()
-                + "/.cache/codebert/config.json",
-        ),
-    };
-    let vocab_resource = LocalResource {
-        local_path: PathBuf::from(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .into_os_string()
-                .into_string()
-                .unwrap()
-                + "/.cache/codebert/vocab.json",
-        ),
-    };
-    let merges_resource = LocalResource {
-        local_path: PathBuf::from(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .into_os_string()
-                .into_string()
-                .unwrap()
-                + "/.cache/codebert/merges.txt",
-        ),
-    };
-    let weights_resource = LocalResource {
-        local_path: PathBuf::from(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .into_os_string()
-                .into_string()
-                .unwrap()
-                + "/.cache//codebert/rust_model.ot",
-        ),
-    };
-
+    let config_resource = RemoteResource::from_pretrained((
+        "codebert-curs/config",
+        "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/config.json",
+    ));
+    let vocab_resource = RemoteResource::from_pretrained((
+        "codebert-curs/vocab",
+        "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/vocab.json",
+    ));
+    let merges_resource = RemoteResource::from_pretrained((
+        "codebert-curs/merges",
+        "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/merges.txt",
+    ));
+    let weights_resource = RemoteResource::from_pretrained((
+        "codebert-curs/model",
+        "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model.ot",
+    ));
     let config_path = config_resource.get_local_path()?;
     let vocab_path = vocab_resource.get_local_path()?;
     let merges_path = Some(merges_resource.get_local_path()?);
