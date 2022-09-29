@@ -75,17 +75,17 @@ fn classify(
 ) -> Result<()> {
     //  Define input
     // Define the cordinate if extraction "id"
-    let [mut r1, mut c1, mut r2, mut c2] = [0, 0, 0, 0];
     for extraction in &extracted_file.matches {
         let input_string = format!("{}", extraction.text);
-        // extract the coordonate of 'id'
-        if extraction.name == "id" {
-            r1 = extraction.start.row;
-            c1 = extraction.start.column;
-            r2 = extraction.end.row;
-            c2 = extraction.end.column;
+        // only detect the unsafe function
+        if !input_string.contains("unsafe") {
             continue;
         }
+        // extract the coordonate of 'id'
+        let r1 = extraction.start.row + 1;
+        let c1 = extraction.start.column + 1;
+        let r2 = extraction.end.row + 1;
+        let c2 = extraction.end.column + 1;
         let input = [input_string.replace("unsafe ", " ")];
         //tokenizer
         let tokenized_input =
@@ -222,11 +222,11 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
     let weights_path = weights_resource.get_local_path()?;
     let device = Device::cuda_if_available();
     // let device = Device::Cpu;
-    if device == Device::Cpu {
-        println!("inference device: cpu");
-    } else {
-        println!("inference device: cuda");
-    }
+    // if device == Device::Cpu {
+    //     println!("inference device: cpu");
+    // } else {
+    //     println!("inference device: cuda");
+    // }
     let tokenizer = TokenizerOption::from_file(
         ModelType::Roberta,
         vocab_path.to_str().unwrap(),
