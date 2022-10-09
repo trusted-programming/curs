@@ -1,4 +1,4 @@
-use crate::extractor::Extractor;
+use crate::query::Extractor;
 use anyhow::{bail, Context, Result};
 use ignore::types::{Types, TypesBuilder};
 use ignore::DirEntry;

@@ -1,4 +1,4 @@
-use crate::language::Language;
+use crate::query::Language;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
@@ -174,7 +174,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::language::Language;
+    use crate::query::Language;
     use tree_sitter::Parser;
 
     #[test]

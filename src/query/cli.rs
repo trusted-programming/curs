@@ -1,6 +1,6 @@
-use crate::extractor::Extractor;
-use crate::extractor_chooser::ExtractorChooser;
-use crate::language::Language;
+use crate::query::Extractor;
+use crate::query::ExtractorChooser;
+use crate::query::Language;
 use anyhow::{bail, Context, Error, Result};
 use clap::{crate_authors, crate_version, Arg, ArgMatches, Command};
 use itertools::Itertools;
