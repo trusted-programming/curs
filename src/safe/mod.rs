@@ -1,3 +1,3 @@
 mod inference;
 
-pub use inference::{classify, do_query, show_languages};
+pub use inference::{show_languages, SafeLanguageModel};
