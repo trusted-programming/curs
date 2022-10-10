@@ -84,7 +84,10 @@ impl SafeLanguageModel {
         })
     }
 
-    fn search_files(&self) -> Result<Vec<ignore::DirEntry>> {
+    pub fn get_opt(&self) -> &QueryOpts {
+        &self.opts
+    }
+    pub fn search_files(&self) -> Result<Vec<ignore::DirEntry>> {
         let opts = &self.opts;
         let mut builder = match opts.paths.split_first() {
             Some((first, rest)) => {
@@ -119,49 +122,6 @@ impl SafeLanguageModel {
         drop(root_sender);
 
         Ok(receiver.iter().collect())
-    }
-
-    pub fn extraction(&self) -> Result<Vec<ExtractedFile>> {
-        // You might think "why not use ParallelBridge here?" Well, the quick answer
-        // is that I benchmarked it and having things separated here and handling
-        // their own errors actually speeds up this part of the code by like 20%!
-        let items: Vec<ignore::DirEntry> = self
-            .search_files()
-            .context("had a problem while walking the filesystem")?;
-
-        let chooser = self
-            .opts
-            .extractor_chooser()
-            .context("couldn't construct a filetype matcher")?;
-        let mut extracted_files = items
-            .par_iter()
-            .filter_map({
-                let chooser = &chooser;
-                |entry| {
-                    chooser
-                        .extractor_for(entry)
-                        .map(|extractor| (entry, extractor))
-                }
-            })
-            .map_init(Parser::new, |parser, (entry, extractor)| {
-                extractor
-                    .extract_from_file(entry.path(), parser)
-                    .with_context(|| {
-                        format!("could not extract matches from {}", entry.path().display())
-                    })
-            })
-            .filter_map(|result_containing_option| match result_containing_option {
-                Ok(None) => None,
-                Ok(Some(extraction)) => Some(Ok(extraction)),
-                Err(err) => Some(Err(err)),
-            })
-            .collect::<Result<Vec<ExtractedFile>>>()
-            .context("couldn't extract matches from files")?;
-
-        if self.opts.sort {
-            extracted_files.sort()
-        }
-        Ok(extracted_files)
     }
 
     pub fn classify(&self, extracted_file: &ExtractedFile) -> Result<Vec<String>> {
@@ -254,34 +214,74 @@ impl SafeLanguageModel {
                     scores[sentence_idx],
                 );
                 result.push(out);
-                println!(
-                    "{},{},{},{},{},{}(prob={:.2})",
-                    extracted_file
-                        .file
-                        .as_ref()
-                        .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
-                        .unwrap_or("NO FILE"),
-                    r1,
-                    c1,
-                    r2,
-                    c2,
-                    &label_string,
-                    scores[sentence_idx]
-                );
+                // println!(
+                //     "{},{},{},{},{},{}(prob={:.2})",
+                //     extracted_file
+                //         .file
+                //         .as_ref()
+                //         .map(|f| f.to_str().unwrap_or("NON-UTF8 FILENAME"))
+                //         .unwrap_or("NO FILE"),
+                //     r1,
+                //     c1,
+                //     r2,
+                //     c2,
+                //     &label_string,
+                //     scores[sentence_idx]
+                // );
             }
         }
         Ok(result)
     }
 
-    pub fn predict(&self) -> Result<Vec<Vec<String>>> {
-        let extracted_files = self.extraction()?;
-        let mut result: Vec<Vec<String>> = vec![];
+    pub fn predict(&self) -> Result<Vec<String>> {
+        // You might think "why not use ParallelBridge here?" Well, the quick answer
+        // is that I benchmarked it and having things separated here and handling
+        // their own errors actually speeds up this part of the code by like 20%!
+        let items: Vec<ignore::DirEntry> = self
+            .search_files()
+            .context("had a problem while walking the filesystem")?;
+
+        let chooser = self
+            .opts
+            .extractor_chooser()
+            .context("couldn't construct a filetype matcher")?;
+        let mut extracted_files = items
+            .par_iter()
+            .filter_map({
+                let chooser = &chooser;
+                |entry| {
+                    chooser
+                        .extractor_for(entry)
+                        .map(|extractor| (entry, extractor))
+                }
+            })
+            .map_init(Parser::new, |parser, (entry, extractor)| {
+                extractor
+                    .extract_from_file(entry.path(), parser)
+                    .with_context(|| {
+                        format!("could not extract matches from {}", entry.path().display())
+                    })
+            })
+            .filter_map(|result_containing_option| match result_containing_option {
+                Ok(None) => None,
+                Ok(Some(extraction)) => Some(Ok(extraction)),
+                Err(err) => Some(Err(err)),
+            })
+            .collect::<Result<Vec<ExtractedFile>>>()
+            .context("couldn't extract matches from files")?;
+
+        if self.opts.sort {
+            extracted_files.sort()
+        }
+        let mut result: Vec<String> = vec![];
 
         match self.opts.format {
             QueryFormat::Classes => {
                 for extracted_file in extracted_files {
                     let out = self.classify(&extracted_file)?;
-                    result.push(out);
+                    for label in out {
+                        result.push(label);
+                    }
                 }
             }
             _ => bail!("You should call do_query function!"),
@@ -291,7 +291,43 @@ impl SafeLanguageModel {
     }
 
     pub fn do_query(&self, mut out: impl Write) -> Result<()> {
-        let extracted_files = self.extraction()?;
+        let items: Vec<ignore::DirEntry> = self
+            .search_files()
+            .context("had a problem while walking the filesystem")?;
+
+        let chooser = self
+            .opts
+            .extractor_chooser()
+            .context("couldn't construct a filetype matcher")?;
+        let mut extracted_files = items
+            .par_iter()
+            .filter_map({
+                let chooser = &chooser;
+                |entry| {
+                    chooser
+                        .extractor_for(entry)
+                        .map(|extractor| (entry, extractor))
+                }
+            })
+            .map_init(Parser::new, |parser, (entry, extractor)| {
+                extractor
+                    .extract_from_file(entry.path(), parser)
+                    .with_context(|| {
+                        format!("could not extract matches from {}", entry.path().display())
+                    })
+            })
+            .filter_map(|result_containing_option| match result_containing_option {
+                Ok(None) => None,
+                Ok(Some(extraction)) => Some(Ok(extraction)),
+                Err(err) => Some(Err(err)),
+            })
+            .collect::<Result<Vec<ExtractedFile>>>()
+            .context("couldn't extract matches from files")?;
+
+        if self.opts.sort {
+            extracted_files.sort()
+        }
+
         match self.opts.format {
             QueryFormat::Classes => bail!("You should call predict function!"),
 

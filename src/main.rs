@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use curs::query::Invocation;
+use curs::query::{Invocation, QueryFormat};
 use curs::safe::{show_languages, SafeLanguageModel};
 use std::env;
 use std::io::{self, BufWriter, Write};
@@ -37,10 +37,18 @@ pub fn try_main(args: Vec<String>, out: impl Write) -> Result<()> {
     match invocation {
         Invocation::DoQuery(query_opts) => {
             let safe_model = SafeLanguageModel::new(query_opts)?;
-            let output = safe_model
-                .classify(query_opts)
-                .context("couldn't perform the prediction")?;
-            Ok(())
+            match safe_model.get_opt().format {
+                QueryFormat::Classes => {
+                    let output = safe_model
+                        .predict()
+                        .context("couldn't perform the prediction")?;
+                    for label in output {
+                        println!("{:?}", label);
+                    }
+                    Ok(())
+                }
+                _ => safe_model.do_query(out),
+            }
         }
         Invocation::ShowLanguages => {
             show_languages(out).context("couldn't show the list of languages")
