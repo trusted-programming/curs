@@ -8,27 +8,60 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+/// Invocation for arguments parser
 pub enum Invocation {
+    /// Configuration for language query
     DoQuery(QueryOpts),
     ShowLanguages,
 }
 
+/// Configuration for language query
 #[derive(Debug)]
 pub struct QueryOpts {
+    /// Extractor for extracting syntax information of program
     pub extractors: Vec<Extractor>,
+    /// Directory of query files
     pub paths: Vec<PathBuf>,
+    /// Whether ignore .gitignore file or not
     pub git_ignore: bool,
+    /// Information format of extrated syntax
     pub format: QueryFormat,
+    /// Whether sort extrated information or not
     pub sort: bool,
 }
 
 impl QueryOpts {
+    /// Build a filetype matcher using provided extractors
     pub fn extractor_chooser(&self) -> Result<ExtractorChooser> {
         ExtractorChooser::from_extractors(&self.extractors)
     }
 }
 
 impl Invocation {
+    /// Build Invocation from input arguments
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::Invocation;
+    ///
+    /// let args=[
+    ///        "curs",
+    ///        "-q",
+    ///        "rust",
+    ///        "(function_item (identifier) @id) @function",
+    ///        "--format=classes",
+    ///        "--sort",
+    ///        "--no-gitignore",
+    ///        "data/error.rs",
+    ///    ]
+    /// .iter()
+    /// .map(|s| s.to_string())
+    /// .collect();
+    /// let invocation = Invocation::from_args(args)?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn from_args(args: Vec<String>) -> Result<Self> {
         // I'm not super happy with this! I would love for LANGUAGE and QUERY to
         // be taken positionally when there is just one so we don't always have
@@ -171,12 +204,18 @@ impl Invocation {
     }
 }
 
+/// Information format of extrated syntax
 #[derive(Debug)]
 pub enum QueryFormat {
+    /// Classify extracted information
     Classes,
+    /// Display extracted information in Lines
     Lines,
+    /// Display extracted information in Json
     Json,
+    /// Display extracted information in JsonLines
     JsonLines,
+    /// Display extracted information in PrettyJson
     PrettyJson,
 }
 

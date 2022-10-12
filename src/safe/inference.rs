@@ -15,6 +15,7 @@ use tree_sitter::Parser;
 #[global_allocator]
 static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
 
+/// Display the extracted syntax information of source file
 pub fn show_languages(mut out: impl Write) -> Result<()> {
     for language in Language::all() {
         writeln!(out, "{}", language.to_string()).context("couldn't print a language")?;
@@ -22,13 +23,61 @@ pub fn show_languages(mut out: impl Write) -> Result<()> {
 
     Ok(())
 }
+/// SafeLanguageModel for classifying safe and unsafe keywords
 pub struct SafeLanguageModel {
+    /// TokenizerOption for safe model
     tokenizer: TokenizerOption,
+    /// Configuration for language query
     opts: QueryOpts,
+    /// Configuration for safe model
     config: ConfigOption,
+    /// safe model
     model: SequenceClassificationOption,
 }
 impl SafeLanguageModel {
+    /// Build a new `SafeLanguageModel`
+    ///
+    /// # Arguments
+    ///
+    /// * `opts` - `QueryOpts` object containing the detected language and file information
+    ///
+    /// # Returns
+    ///
+    /// * `SafeLanguageModel` object
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::Invocation;
+    /// use curs::safe::SafeLanguageModel;
+    ///
+    /// let args=[
+    ///        "curs",
+    ///        "-q",
+    ///        "rust",
+    ///        "(function_item (identifier) @id) @function",
+    ///        "--format=classes",
+    ///        "--sort",
+    ///        "--no-gitignore",
+    ///        "data/error.rs",
+    ///    ]
+    /// .iter()
+    /// .map(|s| s.to_string())
+    /// .collect();
+    /// let invocation = Invocation::from_args(args)?;
+    /// match invocation {
+    ///    Invocation::DoQuery(query_opts) => {
+    ///         let safe_model = SafeLanguageModel::new(query_opts)?;
+    ///    }
+    ///     _ => (),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    /// # Tips
+    /// If runtime accident occurs:"Downloading <https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model.ot> [477.81MiB].......memory allocation of 32768 bytes failed memory allocation of Aborted"
+    /// you may set the network proxy for beteer downloading models from huggingface.co
     pub fn new(opts: QueryOpts) -> Result<SafeLanguageModel> {
         let config_resource = RemoteResource::from_pretrained((
             "codebert-curs/config",
@@ -84,9 +133,12 @@ impl SafeLanguageModel {
         })
     }
 
+    /// Get the private `QueryOpts` of`SafeLanguageModel`
     pub fn get_opt(&self) -> &QueryOpts {
         &self.opts
     }
+
+    /// Find the language (such as Rust) source file if you give a directory arg instead of one specific source file
     pub fn search_files(&self) -> Result<Vec<ignore::DirEntry>> {
         let opts = &self.opts;
         let mut builder = match opts.paths.split_first() {
@@ -124,6 +176,9 @@ impl SafeLanguageModel {
         Ok(receiver.iter().collect())
     }
 
+    /// Predict whether the fragment program containing unsafe keyword is `safe` or `unsafe`
+    /// `safe` indicates that he unsafe keyword could be removed;
+    ///  `unsafe` represents that he unsafe keyword should be reserved;
     pub fn classify(&self, extracted_file: &ExtractedFile) -> Result<Vec<String>> {
         let mut result: Vec<String> = vec![];
         // Define the cordinate if extraction "id"
@@ -233,6 +288,56 @@ impl SafeLanguageModel {
         Ok(result)
     }
 
+    /// Parser source files and call classify function to predict unsafe.
+    ///
+    /// # Returns
+    ///
+    /// * Classily result in forms of "source file name--cordinate of function containg unsafe keyword-- safe/unsafe--probability"
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::{Invocation, QueryFormat};
+    /// use curs::safe::SafeLanguageModel;
+    /// use anyhow::Context;
+    ///
+    ///
+    /// let args=[
+    ///        "curs",
+    ///        "-q",
+    ///        "rust",
+    ///        "(function_item (identifier) @id) @function",
+    ///        "--format=classes",
+    ///        "--sort",
+    ///        "--no-gitignore",
+    ///        "data/error.rs",
+    ///    ]
+    /// .iter()
+    /// .map(|s| s.to_string())
+    /// .collect();
+    /// let invocation = Invocation::from_args(args)?;
+    /// match invocation {
+    ///    Invocation::DoQuery(query_opts) => {
+    ///         let safe_model = SafeLanguageModel::new(query_opts)?;
+    ///         match safe_model.get_opt().format {
+    ///             QueryFormat::Classes => {
+    ///                 let output = safe_model
+    ///                     .predict()
+    ///                     .context("couldn't perform the prediction")?;
+    ///                 for label in output {
+    ///                     println!("{:?}", label);
+    ///                 }
+    ///             ()
+    ///           }
+    ///        _ => (),
+    ///     }
+    ///   }
+    ///     _ => (),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn predict(&self) -> Result<Vec<String>> {
         // You might think "why not use ParallelBridge here?" Well, the quick answer
         // is that I benchmarked it and having things separated here and handling
@@ -290,6 +395,50 @@ impl SafeLanguageModel {
         Ok(result)
     }
 
+    /// Parser source files.
+    ///
+    /// # Returns
+    ///
+    /// * Concrete syntax tree for source files
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::{Invocation, QueryFormat};
+    /// use curs::safe::SafeLanguageModel;
+    /// use std::io::{self, BufWriter, Write};
+    ///
+    ///
+    /// let args=[
+    ///        "curs",
+    ///        "-q",
+    ///        "rust",
+    ///        "(function_item (identifier) @id) @function",
+    ///        "--format=pretty-json",
+    ///        "--sort",
+    ///        "--no-gitignore",
+    ///        "data/error.rs",
+    ///    ]
+    /// .iter()
+    /// .map(|s| s.to_string())
+    /// .collect();
+    /// let invocation = Invocation::from_args(args)?;
+    /// let mut buffer = BufWriter::new(io::stdout());
+    ///
+    /// match invocation {
+    ///    Invocation::DoQuery(query_opts) => {
+    ///         let safe_model = SafeLanguageModel::new(query_opts)?;
+    ///         match safe_model.get_opt().format {
+    ///             QueryFormat::Json => safe_model.do_query(&mut buffer)?,
+    ///             _ => (),
+    ///         };
+    ///   }
+    ///    _ => (),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn do_query(&self, mut out: impl Write) -> Result<()> {
         let items: Vec<ignore::DirEntry> = self
             .search_files()

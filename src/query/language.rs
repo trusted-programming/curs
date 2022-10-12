@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Error, Result};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+/// Language support of query
 #[derive(PartialEq, Eq, Hash, Debug)]
 // cargo test --package curs --bin curs -- language::tests
 pub enum Language {
@@ -17,6 +18,7 @@ pub enum Language {
 }
 
 impl Language {
+    /// A set of language supported by query
     pub fn all() -> Vec<Language> {
         vec![
             Language::Cpp,
@@ -31,6 +33,7 @@ impl Language {
         ]
     }
 
+    /// Map language to tree_sitter
     pub fn language(&self) -> tree_sitter::Language {
         unsafe {
             match self {
@@ -47,10 +50,11 @@ impl Language {
         }
     }
 
+    /// Use tree_sitter to extract syntax information of program
     pub fn parse_query(&self, raw: &str) -> Result<tree_sitter::Query> {
         tree_sitter::Query::new(self.language(), raw).map_err(|err| anyhow!("{}", err))
     }
-
+    /// Get the language of source file
     pub fn name_for_types_builder(&self) -> &str {
         match self {
             Language::Cpp => "cpp",

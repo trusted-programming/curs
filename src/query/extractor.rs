@@ -8,16 +8,48 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tree_sitter::{Parser, Point, Query, QueryCursor};
 
+/// Extractor for extracting syntax information of program
 #[derive(Debug)]
 pub struct Extractor {
+    /// Language configuration
     language: Language,
+    /// Language for tree_sitter
     ts_language: tree_sitter::Language,
+    /// Tree_sitter query: a set of patterns that match nodes in a syntax tree.
     query: Query,
+    /// Names of the captures used in the query.
     captures: Vec<String>,
+    /// Ignored names with '_'
     ignores: HashSet<usize>,
 }
 
 impl Extractor {
+    /// Build a new Extractor
+    ///
+    /// # Arguments
+    ///
+    /// * `language` - the language of source code
+    ///
+    /// * `query` - tree_sitter query
+    ///
+    /// # Returns
+    ///
+    /// * `Extractor` object
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::{Language,Extractor};
+    ///
+    /// let lang = Language::Elm;
+    /// let query = lang
+    ///     .parse_query("(import_clause (upper_case_qid)@import)")
+    ///     .unwrap();
+    /// let extractor = Extractor::new(lang, query);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn new(language: Language, query: Query) -> Extractor {
         let captures = query.capture_names().to_vec();
 
@@ -37,10 +69,12 @@ impl Extractor {
         }
     }
 
+    /// Get the language of Extractor
     pub fn language(&self) -> &Language {
         &self.language
     }
 
+    /// Extracted query information from one source file
     pub fn extract_from_file(
         &self,
         path: &Path,
@@ -51,6 +85,45 @@ impl Extractor {
         self.extract_from_text(Some(path), &source, parser)
     }
 
+    /// Extracted query information from one fragment program
+    ///     
+    /// # Arguments
+    ///
+    /// * `path` - Option: the path of source file
+    ///
+    /// * `source` - fragment program
+    ///
+    /// * `parser` - tree_sitter Parser
+    ///
+    /// # Returns
+    ///
+    /// * `ExtractedFile` object
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # fn main() -> anyhow::Result<()> {
+    /// use curs::query::{Language,Extractor};
+    /// use tree_sitter::Parser;
+    ///
+    /// let lang = Language::Elm;
+    /// let query = lang
+    ///     .parse_query("(import_clause (upper_case_qid)@import)")
+    ///     .unwrap();
+    /// let extractor = Extractor::new(lang, query);
+    ///         let extracted = extractor
+    ///        .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
+    ///        // From Result<Option<ExtractedFile>>
+    ///        .unwrap()
+    ///        // From Option<ExtractedFile>
+    ///        .unwrap();
+    ///
+    /// assert_eq!(extracted.matches.len(), 1);
+    /// assert_eq!(extracted.matches[0].name, "import");
+    /// assert_eq!(extracted.matches[0].text, "Html.Styled");
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn extract_from_text(
         &self,
         path: Option<&Path>,
@@ -115,10 +188,14 @@ impl Extractor {
     }
 }
 
+/// Extracted query from source file
 #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtractedFile<'query> {
+    /// Extracted source file
     pub file: Option<PathBuf>,
+    /// Language
     pub file_type: String,
+    /// A set of patterns that match nodes in a syntax tree.
     pub matches: Vec<ExtractedMatch<'query>>,
 }
 
@@ -150,13 +227,19 @@ impl<'query> Display for ExtractedFile<'query> {
     }
 }
 
+/// Pattern matching nodes in a syntax tree.
 #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtractedMatch<'query> {
+    /// Pattern type
     kind: &'static str,
+    /// Pattern name
     pub name: &'query str,
+    /// Fragment program
     pub text: String,
+    /// Start cordinate of current text
     #[serde(serialize_with = "serialize_point")]
     pub start: Point,
+    /// End cordinate of current text
     #[serde(serialize_with = "serialize_point")]
     pub end: Point,
 }

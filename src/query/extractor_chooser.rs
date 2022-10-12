@@ -4,12 +4,16 @@ use ignore::types::{Types, TypesBuilder};
 use ignore::DirEntry;
 use std::collections::HashMap;
 
+/// Extractor for filetype matcher
 pub struct ExtractorChooser<'extractor> {
+    /// Filetype matcher
     matcher: Types,
+    /// Extractor for filetype matcher
     extractors: HashMap<&'extractor str, &'extractor Extractor>,
 }
 
 impl<'extractor> ExtractorChooser<'extractor> {
+    /// Build a filetype matcher using provided extractors
     pub fn from_extractors(extractors: &[Extractor]) -> Result<ExtractorChooser> {
         let mut types_builder = TypesBuilder::new();
         types_builder.add_defaults();
@@ -35,6 +39,7 @@ impl<'extractor> ExtractorChooser<'extractor> {
         })
     }
 
+    /// Extractor for entry
     pub fn extractor_for(&self, entry: &DirEntry) -> Option<&Extractor> {
         let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(true);
         let matched = self.matcher.matched(entry.path(), is_dir);
