@@ -4,7 +4,7 @@
 //!
 //! `curs` infers the necessity of `unsafe` keywords without the need of recompiling. `curs` trains a [microsoft/codebert](https://github.com/microsoft/CodeBERT) based model and take advantage of bert's strong reasoning capability to inference the necessity of `unsafe`.
 //!
-//! # Example
+//! # Usage
 //!
 //! ```no_run
 //!

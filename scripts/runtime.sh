@@ -14,10 +14,3 @@ git clone https://github.com/ikatyang/tree-sitter-markdown.git
 git clone https://github.com/cstrahan/tree-sitter-nix.git
 cd ..
 echo "Download vendor Done!"
-echo "Installing tree-grepper"
-git clone https://github.com/BrianHicks/tree-grepper.git
-cp -r vendor/ tree-grepper/
-cd tree-grepper
-cargo install --path .
-cd ..
-echo "tree-grepper vendor installed!"

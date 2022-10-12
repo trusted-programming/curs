@@ -4,6 +4,10 @@ For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers.
 
 `curs` infers the necessity of `unsafe` keywords without the need of recompiling. `curs` trains a [microsoft/codebert](https://github.com/microsoft/CodeBERT) based model and take advantage of bert's strong reasoning capability to inference the necessity of `unsafe`.
 
+### Declaration
+
+Implementation of the language query in this project is based on source files of [BrianHicks/tree-grepper](https://github.com/BrianHicks/tree-grepper).
+
 ## Performance
 
 It costs 2.06s and 2.90s on average for `curs` inferencing one rust file on Intel I7-12700K CPU and NVIDIA 3080 12GB GPU, seperately.
