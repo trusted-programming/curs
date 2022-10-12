@@ -1,9 +1,76 @@
-use std::path::PathBuf;
+use git2::Repository;
+use std::path::{Path, PathBuf};
 
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
+
+fn clone<P: AsRef<Path>>(url: &str, path: P) -> std::io::Result<()> {
+    match Repository::clone(url, path) {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+    Ok(())
+}
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+    // vendor download
+    if !Path::new("vendor").exists() {
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-cpp.git",
+            "vendor/tree-sitter-cpp",
+        )
+        .ok();
+        clone(
+            "https://github.com/elixir-lang/tree-sitter-elixir.git",
+            "vendor/tree-sitter-elixir",
+        )
+        .ok();
+        clone(
+            "https://github.com/elm-tooling/tree-sitter-elm.git",
+            "vendor/tree-sitter-elm",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-haskell.git",
+            "vendor/tree-sitter-haskell",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-ruby.git",
+            "vendor/tree-sitter-ruby",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-rust.git",
+            "vendor/tree-sitter-rust",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-javascript.git",
+            "vendor/tree-sitter-javascript",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-php.git",
+            "vendor/tree-sitter-php",
+        )
+        .ok();
+        clone(
+            "https://github.com/tree-sitter/tree-sitter-typescript.git",
+            "vendor/tree-sitter-typescript",
+        )
+        .ok();
+        clone(
+            "https://github.com/ikatyang/tree-sitter-markdown.git",
+            "vendor/tree-sitter-markdown",
+        )
+        .ok();
+        clone(
+            "https://github.com/cstrahan/tree-sitter-nix.git",
+            "vendor/tree-sitter-nix",
+        )
+        .ok();
+    }
     // cpp
     let cpp_dir: PathBuf = ["vendor", "tree-sitter-cpp", "src"].iter().collect();
 

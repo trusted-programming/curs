@@ -15,7 +15,6 @@ vendor/
 log/
 src/snapshots/
 .cache/
-tree-grepper/
 data_source.txt
 data/
 Cargo.lock
