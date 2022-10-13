@@ -34,7 +34,7 @@ Download the `tree-grepper` vendor:
 ```bash
 bash ./scripts/runtime.sh
 ```
-It uses `libtorch-1.12.0` to inference rust_hero. Download the libtorch with CPU or CUDA from following links:
+It uses `libtorch-1.12.0` （See [rust-bert](https://github.com/guillaume-be/rust-bert)） to inference rust_hero. Download the libtorch with CPU or CUDA from following links:
 ```bash
 CPU: https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.0%2Bcpu.zip
 CUDA: https://download.pytorch.org/libtorch/cu116/libtorch-cxx11-abi-shared-with-deps-1.12.0%2Bcu116.zip
