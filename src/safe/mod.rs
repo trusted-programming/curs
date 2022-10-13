@@ -6,13 +6,13 @@
 //!
 //! ```no_run
 //! # fn main() -> anyhow::Result<()> {
-//! use curs::query::{Invocation, QueryFormat};
-//! use curs::safe::SafeLanguageModel;
+//! use rust_hero::query::{Invocation, QueryFormat};
+//! use rust_hero::safe::SafeLanguageModel;
 //! use std::io::{self, BufWriter, Write};
 //!
 //!
 //! let args=[
-//!        "curs",
+//!        "rust_hero",
 //!        "-q",
 //!        "rust",
 //!        "(function_item (identifier) @id) @function",

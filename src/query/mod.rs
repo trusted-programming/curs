@@ -11,7 +11,7 @@
 //!
 //! ```
 //! # fn main() -> anyhow::Result<()> {
-//! use curs::query::{Language,Extractor};
+//! use rust_hero::query::{Language,Extractor};
 //! use tree_sitter::Parser;
 //!
 //! let lang = Language::Elm;

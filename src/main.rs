@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use curs::query::{Invocation, QueryFormat};
-use curs::safe::{show_languages, SafeLanguageModel};
+use rust_hero::query::{Invocation, QueryFormat};
+use rust_hero::safe::{show_languages, SafeLanguageModel};
 use std::env;
 use std::io::{self, BufWriter, Write};
 
@@ -74,7 +74,7 @@ mod tests {
     #[ignore]
     fn lines_output() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "elm",
             "(import_clause)",
@@ -90,7 +90,7 @@ mod tests {
     #[ignore]
     fn json_output() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "elm",
             "(import_clause)",
@@ -106,7 +106,7 @@ mod tests {
     #[ignore]
     fn json_lines_output() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "javascript",
             "(identifier)",
@@ -121,7 +121,7 @@ mod tests {
     #[ignore]
     fn pretty_json_output() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "elm",
             "(import_clause)",
@@ -139,7 +139,7 @@ mod tests {
     #[ignore]
     fn all_cpp() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "cpp",
             "(_)",
@@ -154,7 +154,7 @@ mod tests {
     #[ignore]
     fn all_elm() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "elm",
             "(_)",
@@ -169,7 +169,7 @@ mod tests {
     #[ignore]
     fn all_haskell() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "haskell",
             "(_)",
@@ -184,7 +184,7 @@ mod tests {
     #[ignore]
     fn all_javascript() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "javascript",
             "(_)",
@@ -194,7 +194,7 @@ mod tests {
             // note that this doesn't include the entire vendor
             // directory. tree-sitter-javascript vendors a couple of libraries
             // to test things and it makes this test run unacceptably long. I
-            // think the slowdown is due to the diffing step; the curs
+            // think the slowdown is due to the diffing step; the rust_hero
             // code completes in a reasonable amount of time.
             "vendor/tree-sitter-javascript/test",
         ]))
@@ -204,7 +204,7 @@ mod tests {
     #[ignore]
     fn all_php() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "php",
             "(_)",
@@ -219,7 +219,7 @@ mod tests {
     #[ignore]
     fn all_ruby() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "ruby",
             "(_)",
@@ -234,7 +234,7 @@ mod tests {
     #[ignore]
     fn all_rust() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "rust",
             "(_)",
@@ -249,7 +249,7 @@ mod tests {
     #[ignore]
     fn all_typescript() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "typescript",
             "(_)",
@@ -270,7 +270,7 @@ mod tests {
     #[ignore]
     fn all_elixir() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "elixir",
             "(_)",
@@ -285,7 +285,7 @@ mod tests {
     #[ignore]
     fn rust_unsafe() {
         insta::assert_snapshot!(call(&[
-            "curs",
+            "rust_hero",
             "-q",
             "rust",
             "(function_item (identifier) @id) @function",

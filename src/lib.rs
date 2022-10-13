@@ -1,16 +1,20 @@
-//! # Classify unsafe Rust code
-//!
+//! # Additional toolings for rust
+//! rust_hero is a rust assistant that utilizes NLP to code rust easier. It supports `unsafe` and `lifetime` (todo) prediction.
+//! # `unsafe` prediction
 //! For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers. However, the `unsafe` keyword is not necessary if it can be taken out while the program is compiled successfully.
 //!
-//! `curs` infers the necessity of `unsafe` keywords without the need of recompiling. `curs` trains a [microsoft/codebert](https://github.com/microsoft/CodeBERT) based model and take advantage of bert's strong reasoning capability to inference the necessity of `unsafe`.
+//! `rust_hero` infers the necessity of `unsafe` keywords without the need of recompiling. `rust_hero` trains a [microsoft/codebert](https://github.com/microsoft/CodeBERT) based model and take advantage of bert's strong reasoning capability to inference the necessity of `unsafe`.
+//!
+//! # `lifetime` prediction
+//! todo
 //!
 //! # Usage
 //!
 //! ```no_run
 //!
 //! use anyhow::{Context, Result};
-//! use curs::query::{Invocation, QueryFormat};
-//! use curs::safe::{show_languages, SafeLanguageModel};
+//! use rust_hero::query::{Invocation, QueryFormat};
+//! use rust_hero::safe::{show_languages, SafeLanguageModel};
 //! use std::env;
 //! use std::io::{self, BufWriter, Write};
 //!

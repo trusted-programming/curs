@@ -4,7 +4,6 @@ use std::str::FromStr;
 
 /// Language support of query
 #[derive(PartialEq, Eq, Hash, Debug)]
-// cargo test --package curs --bin curs -- language::tests
 pub enum Language {
     Cpp,
     Elixir,

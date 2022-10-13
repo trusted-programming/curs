@@ -40,7 +40,7 @@ impl Extractor {
     ///
     /// ```no_run
     /// # fn main() -> anyhow::Result<()> {
-    /// use curs::query::{Language,Extractor};
+    /// use rust_hero::query::{Language,Extractor};
     ///
     /// let lang = Language::Elm;
     /// let query = lang
@@ -103,7 +103,7 @@ impl Extractor {
     ///
     /// ```
     /// # fn main() -> anyhow::Result<()> {
-    /// use curs::query::{Language,Extractor};
+    /// use rust_hero::query::{Language,Extractor};
     /// use tree_sitter::Parser;
     ///
     /// let lang = Language::Elm;

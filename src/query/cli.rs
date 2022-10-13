@@ -43,10 +43,10 @@ impl Invocation {
     ///
     /// ```no_run
     /// # fn main() -> anyhow::Result<()> {
-    /// use curs::query::Invocation;
+    /// use rust_hero::query::Invocation;
     ///
     /// let args=[
-    ///        "curs",
+    ///        "rust_hero",
     ///        "-q",
     ///        "rust",
     ///        "(function_item (identifier) @id) @function",
@@ -74,7 +74,7 @@ impl Invocation {
         // Check
         // https://users.rust-lang.org/t/grep-like-argument-parsing-with-clap/63392
         // for where I asked about this in public.
-        let matches = Command::new("curs")
+        let matches = Command::new("rust_hero")
             .version(crate_version!())
             .author(crate_authors!())
             .arg(
