@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "rust_hero"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
     "Vincent Xiao <vincent.xiao.me@gmail.com>",
     "Yijun Yu <y.yu@open.ac.uk>",
@@ -41,3 +41,7 @@ insta = "1.10.0"
 [build-dependencies]
 cc = { version = "1.0.72", features = ["parallel"] }
 git2 = "0.15.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+rustdoc-args = ["--cfg", "doc_cfg"]

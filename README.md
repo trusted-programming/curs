@@ -2,6 +2,11 @@
 
 rust_hero is a rust assistant that utilizes NLP to enhance the quality of rust code. It supports `unsafe` and `lifetime` (todo) prediction.
 
+```toml
+[dependencies]
+rust_hero = "0.4"
+```
+
 # Classify unsafe Rust code
 
 For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers. However, the `unsafe` keyword is not necessary if it can be taken out while the program is compiled successfully.
