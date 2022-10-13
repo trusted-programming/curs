@@ -1,5 +1,5 @@
 //! # Additional toolings for rust
-//! rust_hero is a rust assistant that utilizes NLP to code rust easier. It supports `unsafe` and `lifetime` (todo) prediction.
+//! rust_hero is a rust assistant that utilizes NLP to program rust more efficiently. It supports `unsafe` and `lifetime` (todo) prediction.
 //! # `unsafe` prediction
 //! For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers. However, the `unsafe` keyword is not necessary if it can be taken out while the program is compiled successfully.
 //!

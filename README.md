@@ -1,6 +1,6 @@
 # Additional toolings for rust
 
-rust_hero is a rust assistant that utilizes NLP to code rust easier. It supports `unsafe` and `lifetime` (todo) prediction.
+rust_hero is a rust assistant that utilizes NLP to enhance the quality of rust code. It supports `unsafe` and `lifetime` (todo) prediction.
 
 # Classify unsafe Rust code
 
