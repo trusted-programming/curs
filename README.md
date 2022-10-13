@@ -52,7 +52,7 @@ export LIBTORCH=$libtorchDir$/libtorch
 export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 source envConfig
 ```
-## Prepare rust data for rust_hero test:
+## Prepare rust data for rust_hero test (optional):
 50 rust files for testing is elaboratly selected from open-source rust project including on `rust-openssl`, `tokio`, `anyhow`, `hyper`, `rand`, `regex` and `rayon`:
 ```bash
 bash ./scripts/prepare_data.sh
