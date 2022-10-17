@@ -1,10 +1,16 @@
-use std::path::PathBuf;
-
+use std::path::{Path, PathBuf};
+use std::process::Command;
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+    if !Path::new("vendor/tree-sitter-cpp/src/parser.c").exists() {
+        Command::new("git")
+            .args(&["submodule", "update", "--init", "--recursive"])
+            .output()
+            .expect("Sync submodules failed!");
+    }
     // cpp
     let cpp_dir: PathBuf = ["vendor", "tree-sitter-cpp", "src"].iter().collect();
 
