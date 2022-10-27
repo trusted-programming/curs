@@ -44,6 +44,7 @@ insta = "1.10.0"
 
 [build-dependencies]
 cc = { version = "1.0.72", features = ["parallel"] }
+git2 = "0.15.0"
 
 [package.metadata.docs.rs]
 features = ["doc-only"]

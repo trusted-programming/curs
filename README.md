@@ -15,7 +15,7 @@ For each function in Rust, the `unsafe` keyword utilizes the unsafe superpowers.
 
 ### Declaration
 
-Implementation of the language query in this project is based on source files of [BrianHicks/tree-grepper](https://github.com/BrianHicks/tree-grepper).
+Implementation of the language query in this project is based on [BrianHicks/tree-grepper](https://github.com/BrianHicks/tree-grepper).
 
 ## Performance
 
