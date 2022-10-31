@@ -4,7 +4,7 @@ rust_hero is a rust assistant that utilizes NLP to enhance the quality of rust c
 
 ```toml
 [dependencies]
-rust_hero = "0.4"
+rust_hero = "0.5"
 ```
 
 # Classify unsafe Rust code
@@ -30,7 +30,7 @@ It costs 2.06s and 2.90s on average for `rust_hero` inferencing one rust file on
 ```bash
 sudo apt install build-essential cmake pkg-config libssl-dev wget zip git
 ```
-Download the `tree-grepper` vendor:
+Download the `tree-grepper` vendor (`cargo build` also download the vendor automatically):
 ```bash
 bash ./scripts/runtime.sh
 ```
