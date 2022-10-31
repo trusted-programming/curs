@@ -42,7 +42,7 @@ impl Extractor {
     /// # fn main() -> anyhow::Result<()> {
     /// use rust_hero::query::{Language,Extractor};
     ///
-    /// let lang = Language::Elm;
+    /// let lang = Language::Rust;
     /// let query = lang
     ///     .parse_query("(import_clause (upper_case_qid)@import)")
     ///     .unwrap();
@@ -106,21 +106,22 @@ impl Extractor {
     /// use rust_hero::query::{Language,Extractor};
     /// use tree_sitter::Parser;
     ///
-    /// let lang = Language::Elm;
+    /// let lang = Language::Rust;
     /// let query = lang
-    ///     .parse_query("(import_clause (upper_case_qid)@import)")
+    ///     .parse_query("(function_item (identifier) @id) @function")
     ///     .unwrap();
     /// let extractor = Extractor::new(lang, query);
     ///         let extracted = extractor
-    ///        .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
+    ///        .extract_from_text(None, b"fn main(){println!(\"hello rust_hero\");}", &mut Parser::new())
     ///        // From Result<Option<ExtractedFile>>
     ///        .unwrap()
     ///        // From Option<ExtractedFile>
     ///        .unwrap();
     ///
-    /// assert_eq!(extracted.matches.len(), 1);
-    /// assert_eq!(extracted.matches[0].name, "import");
-    /// assert_eq!(extracted.matches[0].text, "Html.Styled");
+    /// println!("{:?},{:?}，{:?}",extracted.matches.len(),extracted.matches[0].name,extracted.matches[0].text);
+    /// assert_eq!(extracted.matches.len(), 2);
+    /// assert_eq!(extracted.matches[0].name, "function");
+    /// assert_eq!(extracted.matches[0].text, "fn main(){println!(\"hello rust_hero\");}");
     /// # Ok(())
     /// # }
     /// ```
@@ -252,68 +253,4 @@ where
     out.serialize_field("row", &(point.row + 1))?;
     out.serialize_field("column", &(point.column + 1))?;
     out.end()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::query::Language;
-    use tree_sitter::Parser;
-
-    #[test]
-    fn test_matches_are_extracted() {
-        let lang = Language::Elm;
-        let query = lang
-            .parse_query("(import_clause (upper_case_qid)@import)")
-            .unwrap();
-        // println!("query is {:?}", query);
-        let extractor = Extractor::new(lang, query);
-
-        let extracted = extractor
-            .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
-            // From Result<Option<ExtractedFile>>
-            .unwrap()
-            // From Option<ExtractedFile>
-            .unwrap();
-
-        assert_eq!(extracted.matches.len(), 1);
-        assert_eq!(extracted.matches[0].name, "import");
-        assert_eq!(extracted.matches[0].text, "Html.Styled");
-    }
-
-    #[test]
-    fn test_underscore_names_are_ignored() {
-        let lang = Language::Elm;
-        let query = lang
-            .parse_query("(import_clause (upper_case_qid)@_import)")
-            .unwrap();
-        let extractor = Extractor::new(lang, query);
-
-        let extracted = extractor
-            .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
-            // From Result<Option<ExtractedFile>>
-            .unwrap();
-
-        assert_eq!(extracted, None);
-    }
-
-    #[test]
-    fn test_underscore_names_can_still_be_used_in_matchers() {
-        let lang = Language::JavaScript;
-        let query = lang
-            .parse_query("(call_expression (identifier)@_fn (arguments . (string)@import .) (#eq? @_fn require))")
-            .unwrap();
-        let extractor = Extractor::new(lang, query);
-
-        let extracted = extractor
-            .extract_from_text(None, b"let foo = require(\"foo.js\")", &mut Parser::new())
-            // From Result<Option<ExtractedFile>>
-            .unwrap()
-            // From Option<ExtractedFile>
-            .unwrap();
-
-        assert_eq!(extracted.matches.len(), 1);
-        assert_eq!(extracted.matches[0].name, "import");
-        assert_eq!(extracted.matches[0].text, "\"foo.js\"");
-    }
 }

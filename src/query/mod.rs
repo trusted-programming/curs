@@ -1,6 +1,6 @@
 //! # Extracting syntax information of program
 //!
-//! Implementation of the query supports languages: Cpp, Elixir, Elm, Haskell, JavaScript, Php, Ruby, Rust, TypeScript
+//! Implementation of the query supports Rust
 //!
 //! # Declaration
 //!
@@ -14,21 +14,22 @@
 //! use rust_hero::query::{Language,Extractor};
 //! use tree_sitter::Parser;
 //!
-//! let lang = Language::Elm;
+//! let lang = Language::Rust;
 //! let query = lang
-//!     .parse_query("(import_clause (upper_case_qid)@import)")
+//!     .parse_query("(function_item (identifier) @id) @function")
 //!     .unwrap();
 //! let extractor = Extractor::new(lang, query);
 //!         let extracted = extractor
-//!        .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
+//!        .extract_from_text(None, b"fn main(){println!(\"hello rust_hero\");}", &mut Parser::new())
 //!        // From Result<Option<ExtractedFile>>
 //!        .unwrap()
 //!        // From Option<ExtractedFile>
 //!        .unwrap();
 //!
-//! assert_eq!(extracted.matches.len(), 1);
-//! assert_eq!(extracted.matches[0].name, "import");
-//! assert_eq!(extracted.matches[0].text, "Html.Styled");
+//! println!("{:?},{:?}，{:?}",extracted.matches.len(),extracted.matches[0].name,extracted.matches[0].text);
+//! assert_eq!(extracted.matches.len(), 2);
+//! assert_eq!(extracted.matches[0].name, "function");
+//! assert_eq!(extracted.matches[0].text, "fn main(){println!(\"hello rust_hero\");}");
 //! # Ok(())
 //! # }
 //! ```
