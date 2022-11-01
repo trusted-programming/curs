@@ -2,11 +2,13 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
 
+/// A set of source files
 pub struct Files {
     todo: Vec<PathBuf>,
 }
 
 impl Files {
+    /// Build a set of source files
     pub fn new(todo: Vec<PathBuf>) -> Files {
         Files { todo }
     }
