@@ -1,5 +1,5 @@
 {
-	"name": "rust_hero",
+	"name": "rust-hero",
 	"displayName": "Rust Hero",
 	"description": "Rust extension that utilizes NLP to enhance the quality of rust code",
 	"version": "0.1.0",
@@ -20,14 +20,19 @@
     ],
 	"license": "Apache-2.0",
 	"activationEvents": [
-		"onCommand:extension.rust_hero"
+		"onCommand:extension.rust_hero.workspace",
+		"onCommand:extension.rust_hero.currentfile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.rust_hero",
-				"title": "Rust Hero"
+				"command": "extension.rust_hero.workspace",
+				"title": "Rust Hero: Workspace"
+			},
+			{
+				"command": "extension.rust_hero.currentfile",
+				"title": "Rust Hero: Current File"
 			}
 		]
 	},
