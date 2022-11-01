@@ -18,11 +18,16 @@ or cartes.io
 ```bash
 cargo install rust_hero
 ```
-2. Install `Node.js` and compile project
+2. Install `Node.js` and dependence:
 ```bash
-node run compile
+npm install -g yo generator-code
+npm run compile
 ```
-3. Open project in Vscode and press `F5`. This will compile and run the extension in a new Extension Development Host window.
+and compile project
+```bash
+npm run compile
+```
+1. Open project in Vscode and press `F5`. This will compile and run the extension in a new Extension Development Host window.
 4. Run `Rust Hero: Workspace` or `Rust Hero: Current File` from the Command Palette (Ctrl+Shift+P). This prediction result will be shown in terminal.
 5. Package rust-hero to rust-hero-*.vsix
 ```bash
