@@ -66,3 +66,11 @@ cargo run data/error.rs
 ```bash
 cargo run data/
 ```
+## Convert your pytorch model to rust_model.ot
+1. Install rust-bert from [source code](https://github.com/guillaume-be/rust-bert)
+2. copy scripts/model_convert.py to rust-bert/utils/
+3. Executing script in rust-bert dir:
+```bash
+python utils/model_convert.py --source_file {dir of your pytorch model bin}
+```
+It will generates a rust_model.ot for rust_hero.
