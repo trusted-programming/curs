@@ -79,6 +79,7 @@ impl SafeLanguageModel {
     /// If runtime accident occurs:"Downloading <https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model.ot> [477.81MiB].......memory allocation of 32768 bytes failed memory allocation of Aborted"
     /// you may set the network proxy for beteer downloading models from huggingface.co
     pub fn new(opts: QueryOpts) -> Result<SafeLanguageModel> {
+        // load model from huggingface.co
         let config_resource = RemoteResource::from_pretrained((
             "codebert-curs/config",
             "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/config.json",
@@ -95,6 +96,19 @@ impl SafeLanguageModel {
             "codebert-curs/model",
             "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model_0.6.ot",
         ));
+        // you can also load model from local dir
+        // use std::path::PathBuf;
+        //use rust_bert::resources::LocalResource;
+        //
+        // let weights_resource = LocalResource {
+        //     local_path: PathBuf::from(
+        //         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        //             .into_os_string()
+        //             .into_string()
+        //             .unwrap()
+        //             + "/.cache/model/rust_model_0.6.ot",
+        //     ),
+        // };
         let config_path = config_resource.get_local_path()?;
         let vocab_path = vocab_resource.get_local_path()?;
         let merges_path = Some(merges_resource.get_local_path()?);
@@ -103,6 +117,7 @@ impl SafeLanguageModel {
             memory allocation of Aborted"
             you may set the network proxy for beteer downloading models from huggingface.co
         */
+
         let weights_path = weights_resource.get_local_path()?;
         let device = Device::cuda_if_available();
         // let device = Device::Cpu;
