@@ -93,7 +93,7 @@ impl SafeLanguageModel {
         ));
         let weights_resource = RemoteResource::from_pretrained((
             "codebert-curs/model",
-            "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model.ot",
+            "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model_0.6.ot",
         ));
         let config_path = config_resource.get_local_path()?;
         let vocab_path = vocab_resource.get_local_path()?;
@@ -184,10 +184,15 @@ impl SafeLanguageModel {
         // Define the cordinate if extraction "id"
         for extraction in &extracted_file.matches {
             let input_string = format!("{}", extraction.text);
-            // only detect the unsafe function
-            if !input_string.contains("unsafe") {
+            if extraction.name == "id" {
                 continue;
             }
+            let safety;
+            if input_string.split('\n').collect::<Vec<&str>>()[0].contains("unsafe") {
+                safety = "Unsafe";
+            } else {
+                safety = "Safe";
+            } 
             // extract the coordonate of 'id'
             let r1 = extraction.start.row + 1;
             let c1 = extraction.start.column + 1;
@@ -255,7 +260,7 @@ impl SafeLanguageModel {
                     .unwrap()
                     .clone();
                 let out = format!(
-                    "{},{},{},{},{},{}(prob={:.2})",
+                    "{},{},{},{},{},{}(prob={:.2}),{}",
                     extracted_file
                         .file
                         .as_ref()
@@ -267,6 +272,7 @@ impl SafeLanguageModel {
                     c2,
                     &label_string,
                     scores[sentence_idx],
+                    safety == label_string,
                 );
                 result.push(out);
                 // println!(
