@@ -92,10 +92,16 @@ impl SafeLanguageModel {
             "codebert-curs/merges",
             "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/merges.txt",
         ));
-        let weights_resource = RemoteResource::from_pretrained((
+        let mut weights_resource = RemoteResource::from_pretrained((
             "codebert-curs/model",
             "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model_0.6.ot",
         ));
+        if std::path::Path::new("rust_model_0.6.ot").exists() {
+            weights_resource = RemoteResource::from_pretrained((
+                "codebert-curs/model",
+                "rust_model_0.6.ot",
+            ));
+        }
         // you can also load model from local dir
         // use std::path::PathBuf;
         //use rust_bert::resources::LocalResource;
