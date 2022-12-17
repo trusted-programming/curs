@@ -1,0 +1,112 @@
+{
+	"name": "curs",
+	"displayName": "curs",
+	"description": "curs",
+	"version": "0.0.2",
+	"repository": {
+		"uri": "https://github.com/yijunyu/curs"
+	},
+	"engines": {
+		"vscode": "^1.60.0"
+	},
+	"publisher": "Huawei Technologies, Inc.",
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "curs.detect",
+				"title": "curs: Predict function safety in this file"
+			},
+			{
+				"command": "curs.stop",
+				"title": "curs: Stop function safety prediction on current file"
+			},
+			{
+				"command": "curs.clear",
+				"title": "curs: Clear Display on all files"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "curs.detect"
+				},
+				{
+					"command": "curs.stop"
+				},
+				{
+					"command": "curs.clear"
+				}
+			],
+			"editor/context": [
+				{
+					"submenu": "submenu.curs",
+					"group": "cursGroup@1"
+				}
+			],
+			"explorer/context": [
+				{
+					"submenu": "submenu.curs",
+					"group": "cursGroup@2"
+				}
+			],
+			"submenu.curs": [
+				{
+					"command": "curs.detect",
+					"group": "cursMenuGroup@1"
+				},
+				{
+					"command": "curs.stop",
+					"group": "cursMenuGroup@2"
+				},
+				{
+					"command": "curs.clear",
+					"group": "cursMenuGroup@3"
+				}
+			]
+		},
+		"submenus": [
+			{
+				"id": "submenu.curs",
+				"label": "curs"
+			}
+		],
+		"configuration": {
+			"title": "curs",
+			"properties": {
+				"curs.onSaveCoolDown": {
+					"type": "number",
+					"default": "30",
+					"description": "The cool down time in seconds for executing updating on saving changes."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint src --ext ts",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^7.0.1",
+		"@types/node": "^12.20.46",
+		"@types/vscode": "^1.60.0",
+		"@typescript-eslint/eslint-plugin": "^2.18.0",
+		"@typescript-eslint/parser": "^2.18.0",
+		"eslint": "^6.8.0",
+		"glob": "^7.1.6",
+		"mocha": "^7.0.1",
+		"typescript": "^3.7.5",
+		"vscode-test": "^1.3.0"
+	}
+}

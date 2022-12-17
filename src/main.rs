@@ -43,7 +43,7 @@ pub fn try_main(args: Vec<String>, out: impl Write) -> Result<()> {
                         .predict()
                         .context("couldn't perform the prediction")?;
                     for label in output {
-                        println!("{:?}", label);
+                        println!("{}", label);
                     }
                     Ok(())
                 }
