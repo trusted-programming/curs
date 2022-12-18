@@ -21,9 +21,7 @@ Cargo.lock
 scripts/profiler.py
 scripts/ram.py
 src/snapshots/
-
 # vscode extension
 out
-node_modules
 .vscode-test/
 *.vsix
