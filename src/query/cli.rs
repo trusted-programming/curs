@@ -2,6 +2,7 @@ use crate::query::Extractor;
 use crate::query::ExtractorChooser;
 use crate::query::Language;
 use anyhow::{bail, Context, Error, Result};
+use clap::value_parser;
 use clap::{crate_authors, crate_version, Arg, ArgMatches, Command};
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -117,6 +118,16 @@ impl Invocation {
                 .long_help("sort matches stably. If this is not specified, output ordering will vary because due to parallelism. Caution: this adds a worst-case `O(n * log(n))` overhead, where `n` is the number of files matched. Avoid it if possible if you care about performance.")
             )
             .arg(
+                Arg::new("POSITION")
+                .long("position")
+                .short('p')
+                .value_parser(value_parser!(usize))
+                .number_of_values(2)
+                .value_names(&["LINE", "COLUMN"])
+                .default_values(&["1", "1"])
+                .help("select the function/block that encloses the position")
+            )
+             .arg(
                 Arg::new("LANGUAGE")
                 .long("language")
                 .short('l')
