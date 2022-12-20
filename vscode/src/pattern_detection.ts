@@ -31,17 +31,20 @@ function parseProfilingResultString(document: vscode.TextDocument, profilingResu
 			rows = rows + "\n" + row
 		}
 	});
-	logger.log(rows);
 	return rows.trim().split('\n').map((row) => {
 		logger.log(row);
 		const quotationContent = row.endsWith('""') ? "" : row.substring(row.substring(0, row.length-2).lastIndexOf('"')+1, row.length-1).replace('\\n', '\n');
         const values = row.split(',');
 		const startLine = parseInt(values[1]) - 1;
-		const startCol = parseInt(values[2]) - 1 ;
-		const endLine = parseInt(values[3]) - 1;
-		const endCol = parseInt(values[4]) - 1;
+		// const startCol = parseInt(values[2]) - 1 ;
+		// const endLine = parseInt(values[3]) - 1;
+		// const endCol = parseInt(values[4]) - 1;
 		const triggerFile = values[5];
 		const suggestedAction = values[5];
+		const signature = document.lineAt(startLine).text;
+		const startCol = signature.indexOf("unsafe");
+		const endLine = startLine;
+		const endCol = startCol + "unsafe".length;
 		return {
 			profilingIndex: triggerFile+','+startLine+','+startCol+','+endLine+','+endCol,
 			startLine: startLine,
@@ -49,7 +52,7 @@ function parseProfilingResultString(document: vscode.TextDocument, profilingResu
 			endLine: endLine,
 			endCol: endCol,
 			triggerFile: triggerFile,
-			suggestedAction: "delete",
+			suggestedAction: 'delete',
 			suggestedSnippet: quotationContent,
 		}
     });
