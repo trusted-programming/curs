@@ -2,7 +2,7 @@ use crate::query::Extractor;
 use crate::query::ExtractorChooser;
 use crate::query::Language;
 use anyhow::{bail, Context, Error, Result};
-use clap::{crate_authors, crate_version, Arg, ArgMatches, Command};
+use clap::{crate_authors, crate_version, value_parser, Arg, ArgMatches, Command};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -18,6 +18,7 @@ pub enum Invocation {
 /// Configuration for language query
 #[derive(Debug)]
 pub struct QueryOpts {
+    pub position: Vec<usize>,
     /// Extractor for extracting syntax information of program
     pub extractors: Vec<Extractor>,
     /// Directory of query files
@@ -122,14 +123,51 @@ impl Invocation {
                 .short('l')
                 .help("print the language names tree-grepper knows about")
             )
+            .arg(
+                Arg::new("POSITION")
+                .long("position")
+                .short('p')
+                .value_parser(value_parser!(usize))
+                .number_of_values(2)
+                .value_names(&["LINE", "COLUMN"])
+                .default_values(&["1", "1"])
+                .help("select the function/block that encloses the position")
+            )
             .try_get_matches_from(args)
             .context("could not parse args")?;
-
         if matches.is_present("LANGUAGE") {
             Ok(Self::ShowLanguages)
+        } else if matches.is_present("POSITION") {
+             if let Some(mut values) = matches.values_of("POSITION") {
+                let position = vec![usize::from_str(&values.next().unwrap()).unwrap(), usize::from_str(&values.next().unwrap()).unwrap()]; 
+                Ok(Self::DoQuery(QueryOpts {
+                    extractors: Self::extractors(&matches)?,
+                    position: position,
+                    paths: Self::paths(&matches)?,
+                    git_ignore: !matches.is_present("no-gitignore"),
+                    format: QueryFormat::from_str(
+                        matches.value_of("FORMAT").context("format not provided")?,
+                    )
+                    .context("could not set format")?,
+                    sort: matches.is_present("SORT"),
+                }))
+            } else {
+                Ok(Self::DoQuery(QueryOpts {
+                    extractors: Self::extractors(&matches)?,
+                    position: vec![0, 0],
+                    paths: Self::paths(&matches)?,
+                    git_ignore: !matches.is_present("no-gitignore"),
+                    format: QueryFormat::from_str(
+                        matches.value_of("FORMAT").context("format not provided")?,
+                    )
+                    .context("could not set format")?,
+                    sort: matches.is_present("SORT"),
+                }))
+            }
         } else {
             Ok(Self::DoQuery(QueryOpts {
                 extractors: Self::extractors(&matches)?,
+                position: vec![0, 0],
                 paths: Self::paths(&matches)?,
                 git_ignore: !matches.is_present("no-gitignore"),
                 format: QueryFormat::from_str(

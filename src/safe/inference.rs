@@ -94,13 +94,12 @@ impl SafeLanguageModel {
         ));
         let mut weights_resource = RemoteResource::from_pretrained((
             "codebert-curs/model",
-            "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model_0.6.ot",
+            // "https://huggingface.co/Vincent-Xiao/codebert-curs/resolve/main/rust_model_0.6.ot",
+            "rust_model_0.6.ot",
         ));
         if std::path::Path::new("rust_model_0.6.ot").exists() {
-            weights_resource = RemoteResource::from_pretrained((
-                "codebert-curs/model",
-                "rust_model_0.6.ot",
-            ));
+            weights_resource =
+                RemoteResource::from_pretrained(("codebert-curs/model", "rust_model_0.6.ot"));
         }
         // you can also load model from local dir
         // use std::path::PathBuf;
@@ -213,7 +212,7 @@ impl SafeLanguageModel {
                 safety = "Unsafe";
             } else {
                 safety = "Safe";
-            } 
+            }
             // extract the coordonate of 'id'
             let r1 = extraction.start.row + 1;
             let c1 = extraction.start.column + 1;

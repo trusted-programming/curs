@@ -7,7 +7,7 @@ authors = [
     "Yijun Yu <y.yu@open.ac.uk>",
 ]
 description = "Rust assistant that utilizes NLP to enhance the quality of rust code."
-repository = "https://github.com/yijunyu/curs"
+repository = "https://github.com/trusted-programming/curs"
 documentation = "https://docs.rs/rust_hero"
 keywords = ["NLP", "unsafe", "lifetime"]
 license = "Apache-2.0"
