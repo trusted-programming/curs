@@ -135,46 +135,32 @@ impl Invocation {
             )
             .try_get_matches_from(args)
             .context("could not parse args")?;
+        let sort = matches.is_present("SORT");
+        let extractors = Self::extractors(&matches)?;
+        let paths = Self::paths(&matches)?;
+        let git_ignore = !matches.is_present("no-gitignore");
+        let format =
+            QueryFormat::from_str(matches.value_of("FORMAT").context("format not provided")?)
+                .context("could not set format")?;
+        let position = if let Some(mut values) = matches.values_of("POSITION") {
+            vec![
+                usize::from_str(&values.next().unwrap()).unwrap(),
+                usize::from_str(&values.next().unwrap()).unwrap(),
+            ]
+        } else {
+            vec![0, 0]
+        };
+
         if matches.is_present("LANGUAGE") {
             Ok(Self::ShowLanguages)
-        } else if matches.is_present("POSITION") {
-             if let Some(mut values) = matches.values_of("POSITION") {
-                let position = vec![usize::from_str(&values.next().unwrap()).unwrap(), usize::from_str(&values.next().unwrap()).unwrap()]; 
-                Ok(Self::DoQuery(QueryOpts {
-                    extractors: Self::extractors(&matches)?,
-                    position: position,
-                    paths: Self::paths(&matches)?,
-                    git_ignore: !matches.is_present("no-gitignore"),
-                    format: QueryFormat::from_str(
-                        matches.value_of("FORMAT").context("format not provided")?,
-                    )
-                    .context("could not set format")?,
-                    sort: matches.is_present("SORT"),
-                }))
-            } else {
-                Ok(Self::DoQuery(QueryOpts {
-                    extractors: Self::extractors(&matches)?,
-                    position: vec![0, 0],
-                    paths: Self::paths(&matches)?,
-                    git_ignore: !matches.is_present("no-gitignore"),
-                    format: QueryFormat::from_str(
-                        matches.value_of("FORMAT").context("format not provided")?,
-                    )
-                    .context("could not set format")?,
-                    sort: matches.is_present("SORT"),
-                }))
-            }
         } else {
             Ok(Self::DoQuery(QueryOpts {
-                extractors: Self::extractors(&matches)?,
-                position: vec![0, 0],
-                paths: Self::paths(&matches)?,
-                git_ignore: !matches.is_present("no-gitignore"),
-                format: QueryFormat::from_str(
-                    matches.value_of("FORMAT").context("format not provided")?,
-                )
-                .context("could not set format")?,
-                sort: matches.is_present("SORT"),
+                extractors,
+                position,
+                paths,
+                git_ignore,
+                format,
+                sort,
             }))
         }
     }

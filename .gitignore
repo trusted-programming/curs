@@ -25,3 +25,4 @@ src/snapshots/
 out
 .vscode-test/
 *.vsix
+vendor/
